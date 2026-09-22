@@ -1,9 +1,11 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { ListingCard } from "@/components/listing-card";
 import type { Listing } from "@/data/listings";
 import type { SearchIntent } from "@/lib/search/intent/schema";
+import { clearComparison, toggleComparisonId } from "@/lib/listings/comparison";
 
 type SearchResponse = { interpretedIntent: SearchIntent; retrieval: "embedding" | "local-fallback"; fallbackReason?: string; listings: Listing[]; matchReasons: Record<string, string[]>; scores: { id: string; score: number }[] };
 
@@ -62,6 +64,8 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [comparisonIds, setComparisonIds] = useState<string[]>([]);
+  const [comparisonMessage, setComparisonMessage] = useState("");
   const pending = useRef<AbortController | null>(null);
   const input = useRef<HTMLInputElement | null>(null);
 
@@ -109,11 +113,24 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
     input.current?.select();
   }
 
+  function toggleComparison(id: string) {
+    const result = toggleComparisonId(comparisonIds, id);
+    setComparisonIds(result.ids);
+    setComparisonMessage(result.limitReached ? "You can compare up to two laptops. Remove one before adding another." : "");
+  }
+
+  function resetComparison() {
+    setComparisonIds(clearComparison());
+    setComparisonMessage("");
+  }
+
   const displayed = results?.listings ?? catalogue;
   const labels = results ? intentLabels(results.interpretedIntent) : [];
   const ordering = results ? sortDescription(results.interpretedIntent) : undefined;
+  const comparisonListings = comparisonIds.map((id) => catalogue.find((listing) => listing.id === id)).filter((listing): listing is Listing => Boolean(listing));
+  const compareHref = `/compare?ids=${comparisonIds.map(encodeURIComponent).join(",")}`;
 
-  return <div className="mt-7 sm:mt-9">
+  return <div className={`mt-7 sm:mt-9 ${comparisonIds.length ? "pb-52 sm:pb-36" : ""}`}>
     <section aria-labelledby="search-heading" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="max-w-3xl">
         <h2 id="search-heading" className="text-lg font-bold text-slate-950 sm:text-xl">Search the marketplace</h2>
@@ -162,8 +179,22 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
       {process.env.NODE_ENV === "development" && results && <details className="mb-5 rounded-xl border border-slate-200 bg-white p-3 text-sm"><summary className="cursor-pointer font-medium">Search details (development)</summary><p className="mt-2">Retrieval: {results.retrieval}</p>{results.fallbackReason && <p className="mt-1">Fallback reason: {results.fallbackReason}</p>}<pre className="mt-2 max-w-full overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify({ interpretedIntent: results.interpretedIntent, scores: results.scores }, null, 2)}</pre></details>}
 
       {displayed.length
-        ? <div className={`grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-70" : ""}`}>{displayed.map((listing) => <ListingCard key={listing.id} listing={listing} matchReasons={results?.matchReasons[listing.id]} />)}</div>
+        ? <div className={`grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-70" : ""}`}>{displayed.map((listing) => <ListingCard key={listing.id} listing={listing} matchReasons={results?.matchReasons[listing.id]} compareSelected={comparisonIds.includes(listing.id)} onToggleCompare={toggleComparison} />)}</div>
         : <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12 text-center shadow-sm"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-xl" aria-hidden="true">⌕</div><h3 className="mt-4 text-lg font-bold">No laptops match those requirements.</h3><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">Try removing a constraint, raising your budget, or returning to the full catalogue.</p><div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row"><button type="button" onClick={simplify} className="min-h-11 rounded-xl border border-slate-300 bg-white px-5 font-semibold hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Try fewer requirements</button><button type="button" onClick={clear} className="min-h-11 rounded-xl bg-blue-700 px-5 font-semibold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Clear search</button></div></div>}
     </section>
+    {comparisonListings.length > 0 && <aside aria-labelledby="compare-tray-title" className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-4xl rounded-2xl border border-blue-200 bg-white/95 p-4 shadow-xl backdrop-blur sm:inset-x-6 sm:bottom-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-3"><h2 id="compare-tray-title" className="font-bold text-slate-950">Compare laptops</h2><button type="button" onClick={resetComparison} className="min-h-10 rounded-lg px-2 text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Clear comparison</button></div>
+          <ul className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:gap-2">
+            {comparisonListings.map((listing) => <li key={listing.id} className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-100 py-1 pl-3 pr-1 text-sm font-semibold text-slate-800"><span className="truncate">{listing.model}</span><button type="button" onClick={() => toggleComparison(listing.id)} aria-label={`Remove ${listing.title} from comparison`} className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md text-lg text-slate-500 hover:bg-white hover:text-red-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-700">×</button></li>)}
+          </ul>
+          <p className="mt-1 min-h-5 text-xs text-slate-600" aria-live="polite">{comparisonMessage || (comparisonListings.length === 1 ? "Select one more laptop to compare." : "Two laptops selected and ready to compare.")}</p>
+        </div>
+        {comparisonListings.length === 2
+          ? <Link href={compareHref} className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-blue-700 px-5 font-bold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Compare 2 laptops</Link>
+          : <button type="button" disabled className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-slate-200 px-5 font-bold text-slate-500 disabled:cursor-not-allowed">Add another laptop</button>}
+      </div>
+    </aside>}
   </div>;
 }
