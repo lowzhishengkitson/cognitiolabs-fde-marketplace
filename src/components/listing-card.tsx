@@ -1,19 +1,18 @@
 import Link from "next/link";
 import type { Listing } from "@/data/listings";
 import { formatPrice, formatStorage } from "@/lib/listings/format";
+import { ListingImage } from "@/components/listing-image";
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const href = `/listing/${listing.id}`;
   return <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-600 focus-within:ring-offset-2">
     <Link href={href} className="absolute inset-0 z-10 rounded-2xl focus:outline-none" aria-label={`View ${listing.title}`}><span className="sr-only">View details</span></Link>
-    <div className="flex h-36 items-center justify-center border-b border-slate-100 bg-slate-100 text-slate-400" aria-hidden="true">
-      <svg viewBox="0 0 96 64" className="h-16 w-24" fill="none"><rect x="15" y="7" width="66" height="43" rx="4" stroke="currentColor" strokeWidth="3"/><path d="M7 53h82l-5 5H12l-5-5Z" fill="currentColor"/><path d="M21 13h54v31H21z" fill="#dbeafe"/></svg>
+    <div className="relative border-b border-slate-100">
+      <ListingImage src={listing.image} alt={`${listing.title} product photo`} sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" className="aspect-[4/3] w-full" />
+      <span className="absolute right-3 top-3 rounded-full border border-white/80 bg-white/95 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm">{listing.condition}</span>
     </div>
     <div className="flex flex-1 flex-col p-4 sm:p-5">
-      <div className="flex min-w-0 items-center justify-between gap-3">
-        <p className="truncate text-xs font-bold uppercase tracking-[0.12em] text-blue-700">{listing.brand}</p>
-        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">{listing.condition}</span>
-      </div>
+      <p className="truncate text-xs font-bold uppercase tracking-[0.12em] text-blue-700">{listing.brand}</p>
       <h3 className="mt-3 text-lg font-bold leading-snug text-slate-950 transition group-hover:text-blue-800">{listing.title}</h3>
       <p className="mt-3 text-2xl font-extrabold tracking-tight text-slate-950">{formatPrice(listing.price)}</p>
       <p className="mt-1 flex items-start gap-1.5 text-sm text-slate-500"><svg viewBox="0 0 20 20" className="mt-0.5 h-4 w-4 shrink-0" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M10 18s6-5.1 6-11A6 6 0 1 0 4 7c0 5.9 6 11 6 11Zm0-8.5A2.5 2.5 0 1 0 10 4a2.5 2.5 0 0 0 0 5.5Z" clipRule="evenodd"/></svg><span>{listing.sellerLocation}</span></p>
