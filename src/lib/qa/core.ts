@@ -131,8 +131,22 @@ function deterministicComparisonAnswer(items: readonly Listing[], requested: rea
 
 export type QaCategory = "missing-information" | "named-comparison" | "exact-factual" | "semantic-recommendation";
 
+export function missingCatalogueInformation(question: string): string | null {
+  if (/\b(longest|shortest|best|worst)\s+battery\s+(?:life|runtime)|\b(?:hours|how long)\b.*\bbattery\b/i.test(question))
+    return "The catalogue provides battery health percentages, but no measured battery runtime. I cannot determine actual battery life from the available data.";
+  if (/\bwarrant(?:y|ies)\b/i.test(question))
+    return "Warranty information is not available in the seeded catalogue, so I cannot compare or confirm warranty coverage.";
+  if (/\b(?:thunderbolt|usb|hdmi|displayport|ports?)\b/i.test(question))
+    return "Port and Thunderbolt information is not available in the seeded catalogue, so I cannot determine which listings include those connections.";
+  if (/\brefresh rate\b|\b\d+\s*hz\b/i.test(question))
+    return "Display refresh-rate information is not available in the seeded catalogue.";
+  if (/\b(?:upgrade|upgradeable|replaceable|expandable)\b/i.test(question))
+    return "Component upgradeability is not available in the seeded catalogue.";
+  return null;
+}
+
 export function classifyQuestion(question: string, catalogue: readonly Listing[]): QaCategory {
-  if (/\b(longest|shortest|best|worst)\s+battery\s+(?:life|runtime)|\b(?:hours|how long)\b.*\bbattery\b/i.test(question)) return "missing-information";
+  if (missingCatalogueInformation(question)) return "missing-information";
   if (resolveNamedListings(question, catalogue).listings.length >= 2 || /\b(compare|these two)\b/i.test(question)) return "named-comparison";
   if (requestedExtrema(question).length) return "exact-factual";
   return "semantic-recommendation";
@@ -161,7 +175,7 @@ export type QaAnswer = (question: string, context: string) => Promise<unknown>;
 
 export async function answerCatalogueQuestion(question: string, catalogue: readonly Listing[], retrieve: QaRetrieve, answer: QaAnswer) {
   const category = classifyQuestion(question, catalogue);
-  if (category === "missing-information") return { answer: "The catalogue provides battery health percentages, but no measured battery runtime. I cannot determine actual battery life from the available data.", sources: [] };
+  if (category === "missing-information") return { answer: missingCatalogueInformation(question)!, sources: [] };
 
   const resolution = resolveNamedListings(question, catalogue);
   if (resolution.ambiguous.length) return { answer: `The name “${resolution.ambiguous[0].phrase}” matches multiple catalogue listings. Please specify the exact model.`, sources: [] };

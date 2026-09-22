@@ -115,7 +115,7 @@ export function parseLocally(query: string): SearchIntent {
   const condition = /like.new/i.test(query) ? "Like new" as const : /\bfair\s+condition\b/i.test(query) ? "Fair" as const : /\bgood\s+condition\b/i.test(query) ? "Good" as const : undefined;
   const useCase = /unity|game development|3d/i.test(query) ? "Unity development" : /gam(?:e|ing)/i.test(query) ? "gaming" : /programm|cod(?:e|ing)|developer/i.test(query) ? "programming" : /student|university|school/i.test(query) ? "student" : undefined;
   const lightweight = /\b(?:low[- ]?weight|light[- ]?weight|lightweight)\b|\b(?:light|lighter)\s+(?:laptops?|notebooks?)\b/i.test(query) || (/\bportable\b/i.test(query) && /\b(?:laptops?|notebooks?|computer)\b/i.test(query));
-  const preferences = lightweight || /\btravel(?:ling|ing)?\b/i.test(query) ? ["lightweight"] : undefined;
+  const preferences = lightweight || /\btravel(?:s|ling|ing)?\b/i.test(query) ? ["lightweight"] : undefined;
 
   const sortPhrase = text.match(/\b(?:sort(?:ed)?\s+(?:by|in)?\s*|(?:in\s+)?)(ascending|descending|asc|desc)(?:\s+(?:order|by))?\s*(?:by\s+)?(price|cost|weight|ram|memory|storage|screen(?:\s+size)?|battery(?:\s+health)?)?\b|\b(?:sort(?:ed)?\s+by\s+)(price|cost|weight|ram|memory|storage|screen(?:\s+size)?|battery(?:\s+health)?)\s+(ascending|descending|asc|desc)\b/i);
   const superlatives: Array<[RegExp, NonNullable<SearchIntent["sort"]>]> = [
