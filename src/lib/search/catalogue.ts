@@ -1,5 +1,6 @@
 import type { Listing } from "@/data/listings";
 import type { SearchIntent } from "./intent/schema";
+import { sortListings } from "./sort";
 
 function matchesHardConstraints(item: Listing, intent: SearchIntent): boolean 
 {
@@ -45,8 +46,9 @@ function score(item: Listing, intent: SearchIntent): number
 // Stable tie break avoids changing catalogue order for unspecified preferences.
 export function searchCatalogue(catalogue: readonly Listing[], intent: SearchIntent): Listing[] 
 {
-  return catalogue.map((item, index) => ({ item, index }))
+  const ranked = catalogue.map((item, index) => ({ item, index }))
     .filter(({ item }) => matchesHardConstraints(item, intent))
     .sort((a, b) => score(b.item, intent) - score(a.item, intent) || a.index - b.index)
     .map(({ item }) => item);
+  return sortListings(ranked, intent.sort, (item) => item);
 }

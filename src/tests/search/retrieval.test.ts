@@ -73,3 +73,40 @@ test("successful embedding retrieval reports safe scores", async () => {
   assert.equal(result.listings[0].id, "rog-g14");
   assert.deepEqual(result.scores.map(({ id }) => id), result.listings.map(({ id }) => id));
 });
+
+test("hard filters and explicit sorting override semantic scores", async () => {
+  const subset = [listings[0], listings[2], listings[3], listings[4]];
+  const retrieve = createSemanticRetriever(async (texts) => texts.map((text) => text.includes("Unity") ? [1, 0] : [0, 1]));
+  const cases = [
+    ["laptops below 1.6kg, sorted by weight ascending", "weightKg", "asc", 1.6],
+    ["laptops under $800, cheapest first", "price", "asc", 800],
+    ["16GB laptops, most expensive first", "price", "desc", 16],
+    ["portable programming laptop under $900, cheapest first", "price", "asc", 900],
+  ] as const;
+  for (const [query, field, direction, limit] of cases) {
+    const result = await searchWithFallback(query, subset, retrieve, () => assert.fail("Unexpected fallback"));
+    assert.equal(result.retrieval, "embedding");
+    const values = result.listings.map((item) => item[field]);
+    assert.deepEqual(values, [...values].sort((a, b) => (a - b) * (direction === "asc" ? 1 : -1)));
+    assert.deepEqual(result.scores.map(({ id }) => id), result.listings.map(({ id }) => id));
+    if (query.includes("1.6kg")) assert.ok(values.every((value) => value <= limit));
+    if (query.includes("$")) assert.ok(result.listings.every((item) => item.price <= limit));
+    if (query.includes("16GB")) assert.ok(result.listings.every((item) => item.ramGB >= limit));
+  }
+});
+
+test("explicit ordering wins even when similarity strongly favors a different listing", () => {
+  const subset = [listings[3], listings[4]]; // SGD 420 and SGD 760
+  const vectors = [[0.1, 0.99], [1, 0]];
+  const ranked = rankBySimilarity(subset, vectors, [1, 0], { sort: { field: "price", direction: "asc" } });
+  assert.deepEqual(ranked.map(({ listing }) => listing.price), [420, 760]);
+  assert.ok(ranked[0].score < ranked[1].score);
+});
+
+test("fallback also honors explicit sort; unsorted semantic results retain similarity order", async () => {
+  const subset = [listings[0], listings[2], listings[3], listings[4]];
+  const fallback = await searchWithFallback("laptops under $800, cheapest first", subset, async () => { throw Error("offline"); }, () => "gateway-error");
+  assert.deepEqual(fallback.listings.map((item) => item.price), [420, 760]);
+  const semantic = rankBySimilarity(subset, [[0.9, 0.1], [0.8, 0.2], [1, 0], [0.7, 0.3]], [1, 0], { useCase: "Unity development" });
+  assert.deepEqual(semantic.map(({ listing }) => listing.id), ["latitude-5420", "thinkpad-t14", "rog-g14", "envy-x360"]);
+});

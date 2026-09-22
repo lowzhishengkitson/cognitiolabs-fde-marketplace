@@ -4,6 +4,7 @@ import { searchCatalogue } from "./catalogue";
 import type { ScoredListing } from "./retrieval/semantic";
 import type { SearchIntent } from "./intent/schema";
 import type { FallbackReason } from "./retrieval/errors";
+import { sortListings } from "./sort";
 
 export async function searchWithFallback(query: string,
   catalogue: readonly Listing[],
@@ -13,7 +14,7 @@ export async function searchWithFallback(query: string,
   const intent = parseLocally(query);
   try 
   {
-    const matches = await retrieve(query, { catalogue, intent });
+    const matches = sortListings(await retrieve(query, { catalogue, intent }), intent.sort, (item) => item.listing);
     return { interpretedIntent: intent, retrieval: "embedding" as const, listings: matches.map(({ listing }) => listing), scores: matches.map(({ listing, score }) => ({ id: listing.id, score })) };
   } 
   catch (error) 

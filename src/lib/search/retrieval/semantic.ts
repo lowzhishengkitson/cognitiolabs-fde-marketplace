@@ -2,6 +2,7 @@ import type { Listing } from "@/data/listings";
 import { filterCatalogue } from "../catalogue";
 import type { SearchIntent } from "../intent/schema";
 import { InvalidEmbeddingError } from "./errors";
+import { sortListings } from "../sort";
 
 export function listingToEmbeddingText(item: Listing): string 
 {
@@ -44,9 +45,10 @@ export function rankBySimilarity(catalogue: readonly Listing[],
     throw new InvalidEmbeddingError("Catalogue and embedding count differ");
   const scores = catalogue.map((listing, index) => ({ listing, index, score: cosineSimilarity(queryVector, vectors[index]) }));
   const eligible = new Set(filterCatalogue(catalogue, intent).map((item) => item.id));
-  return scores.filter(({ listing }) => eligible.has(listing.id))
+  const ranked = scores.filter(({ listing }) => eligible.has(listing.id))
     .sort((a, b) => b.score - a.score || a.index - b.index)
     .map(({ listing, score }) => ({ listing, score }));
+  return sortListings(ranked, intent.sort, (item) => item.listing);
 }
 
 export type EmbedTexts = (texts: string[]) => Promise<number[][]>;

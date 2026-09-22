@@ -58,3 +58,26 @@ test("local fallback extracts the example query without treating RAM as minimum 
   assert.ok(matches.some(({ id }) => id === "envy-x360"));
   assert.ok(matches.every((item) => item.price <= 800 && item.ramGB >= 16));
 });
+
+test("local parser recognizes explicit sorting and numerical constraints", () => {
+  assert.deepEqual(parseLocally("laptops below 1.6kg, sorted by weight ascending").sort, { field: "weightKg", direction: "asc" });
+  assert.equal(parseLocally("laptops below 1.6kg, sorted by weight ascending").maxWeightKg, 1.6);
+  assert.deepEqual(parseLocally("laptops under $800, cheapest first").sort, { field: "price", direction: "asc" });
+  assert.equal(parseLocally("16GB laptops, most expensive first").minRamGB, 16);
+  assert.deepEqual(parseLocally("16GB laptops, most expensive first").sort, { field: "price", direction: "desc" });
+  assert.deepEqual(parseLocally("laptops below 1.6kg, sorted in ascending order").sort, { field: "weightKg", direction: "asc" });
+  for (const [query, field, direction] of [
+    ["lightest first", "weightKg", "asc"], ["heaviest first", "weightKg", "desc"],
+    ["lowest weight", "weightKg", "asc"], ["highest weight", "weightKg", "desc"],
+    ["ascending by price", "price", "asc"], ["descending by price", "price", "desc"],
+    ["sort by RAM descending", "ramGB", "desc"], ["best battery health first", "batteryHealth", "desc"],
+    ["sort by storage ascending", "storageGB", "asc"],
+  ] as const) assert.deepEqual(parseLocally(query).sort, { field, direction }, query);
+  assert.deepEqual(parseLocally("lightweight laptop for Unity").sort, undefined);
+});
+
+test("sort schema rejects invalid fields and directions", () => {
+  assert.equal(searchIntentSchema.safeParse({ sort: { field: "cpu", direction: "asc" } }).success, false);
+  assert.equal(searchIntentSchema.safeParse({ sort: { field: "price", direction: "up" } }).success, false);
+  assert.equal(searchIntentSchema.safeParse({ sort: { field: "price", direction: "asc", extra: true } }).success, false);
+});
