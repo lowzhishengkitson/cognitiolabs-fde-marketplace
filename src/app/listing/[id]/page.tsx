@@ -28,7 +28,7 @@ export default async function ListingPage({ params }: Props) {
     ["Screen", `${item.screenSizeInches}″`],
   ];
   return <main className="mx-auto max-w-7xl px-4 py-7 sm:px-6 sm:py-10">
-    <Link href="/#catalogue" className="inline-flex min-h-10 items-center rounded-lg text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 hover:decoration-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">← Back to listings</Link>
+    <Link href="/#catalogue" className="inline-flex min-h-11 items-center rounded-lg text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 hover:decoration-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">← Back to listings</Link>
     <article className="mt-5">
       <div className="grid min-w-0 gap-7 lg:grid-cols-5 lg:items-start lg:gap-10">
         <ListingGallery images={item.images} title={item.title} />

@@ -130,7 +130,7 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
   const comparisonListings = comparisonIds.map((id) => catalogue.find((listing) => listing.id === id)).filter((listing): listing is Listing => Boolean(listing));
   const compareHref = `/compare?ids=${comparisonIds.map(encodeURIComponent).join(",")}`;
 
-  return <div className={`mt-7 sm:mt-9 ${comparisonIds.length ? "pb-52 sm:pb-36" : ""}`}>
+  return <div className="mt-7 sm:mt-9">
     <section aria-labelledby="search-heading" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="max-w-3xl">
         <h2 id="search-heading" className="text-lg font-bold text-slate-950 sm:text-xl">Search the marketplace</h2>
@@ -149,14 +149,14 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
       <div className="mt-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Try an example</p>
         <div className="-mx-1 mt-2 flex gap-2 overflow-x-auto px-1 pb-2 sm:flex-wrap sm:overflow-visible">
-          {suggestions.map((suggestion) => <button key={suggestion} type="button" disabled={loading} onClick={() => applySuggestion(suggestion)} className="min-h-10 shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:opacity-50">{suggestion}</button>)}
+          {suggestions.map((suggestion) => <button key={suggestion} type="button" disabled={loading} onClick={() => applySuggestion(suggestion)} className="min-h-11 shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:opacity-50">{suggestion}</button>)}
         </div>
       </div>
     </section>
 
     <div className="min-h-6" aria-live="polite">
       {loading && <p className="mt-4 flex items-center gap-2 text-sm font-medium text-blue-800"><span className="h-2 w-2 animate-pulse rounded-full bg-blue-600" aria-hidden="true" />Updating results while you browse…</p>}
-      {error && <div role="alert" className="mt-4 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between"><p>{error}</p><button type="button" onClick={() => void runSearch(query)} disabled={loading} className="min-h-10 self-start rounded-lg border border-red-300 bg-white px-4 font-semibold hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 sm:self-auto">Try again</button></div>}
+      {error && <div role="alert" className="mt-4 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between"><p>{error}</p><button type="button" onClick={() => void runSearch(query)} disabled={loading} className="min-h-11 self-start rounded-lg border border-red-300 bg-white px-4 font-semibold hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 sm:self-auto">Try again</button></div>}
     </div>
 
     <section id="catalogue" className="scroll-mt-6 pt-7 sm:pt-9" aria-labelledby="listings-heading" aria-busy={loading}>
@@ -165,15 +165,15 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
           <h2 id="listings-heading" className="text-2xl font-bold tracking-tight text-slate-950">
             {results ? `${displayed.length} ${displayed.length === 1 ? "laptop matches" : "laptops match"} your search` : "Browse all laptops"}
           </h2>
-          <p className="mt-1 text-sm text-slate-600">{activeQuery ? <>Results for “<span className="font-medium text-slate-800">{activeQuery}</span>”</> : `${catalogue.length} pre-owned sample listings`}</p>
+          <p className="mt-1 break-words text-sm text-slate-600">{activeQuery ? <>Results for “<span className="font-medium text-slate-800">{activeQuery}</span>”</> : `${catalogue.length} pre-owned sample listings`}</p>
           {ordering && <p className="mt-1 text-sm font-semibold text-blue-800">{ordering}</p>}
         </div>
-        {results && <button type="button" onClick={clear} className="min-h-10 w-fit rounded-lg px-1 text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 hover:decoration-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">Clear search</button>}
+        {results && <button type="button" onClick={clear} className="min-h-11 w-fit rounded-lg px-1 text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 hover:decoration-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">Clear search</button>}
       </div>
 
       {labels.length > 0 && <div className="mb-5" aria-label="Interpreted search requirements">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Your requirements</p>
-        <ul className="flex flex-wrap gap-2">{labels.map((label) => <li key={label} className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-900">{label}</li>)}</ul>
+        <ul className="flex flex-wrap gap-2">{labels.map((label) => <li key={label} className="max-w-full break-words rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-900">{label}</li>)}</ul>
       </div>}
 
       {process.env.NODE_ENV === "development" && results && <details className="mb-5 rounded-xl border border-slate-200 bg-white p-3 text-sm"><summary className="cursor-pointer font-medium">Search details (development)</summary><p className="mt-2">Retrieval: {results.retrieval}</p>{results.fallbackReason && <p className="mt-1">Fallback reason: {results.fallbackReason}</p>}<pre className="mt-2 max-w-full overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify({ interpretedIntent: results.interpretedIntent, scores: results.scores }, null, 2)}</pre></details>}
@@ -182,12 +182,12 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
         ? <div className={`grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-70" : ""}`}>{displayed.map((listing) => <ListingCard key={listing.id} listing={listing} matchReasons={results?.matchReasons[listing.id]} compareSelected={comparisonIds.includes(listing.id)} onToggleCompare={toggleComparison} />)}</div>
         : <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12 text-center shadow-sm"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-xl" aria-hidden="true">⌕</div><h3 className="mt-4 text-lg font-bold">No laptops match those requirements.</h3><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">Try removing a constraint, raising your budget, or returning to the full catalogue.</p><div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row"><button type="button" onClick={simplify} className="min-h-11 rounded-xl border border-slate-300 bg-white px-5 font-semibold hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Try fewer requirements</button><button type="button" onClick={clear} className="min-h-11 rounded-xl bg-blue-700 px-5 font-semibold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Clear search</button></div></div>}
     </section>
-    {comparisonListings.length > 0 && <aside aria-labelledby="compare-tray-title" className="fixed inset-x-3 bottom-3 z-40 mx-auto max-w-4xl rounded-2xl border border-blue-200 bg-white/95 p-4 shadow-xl backdrop-blur sm:inset-x-6 sm:bottom-5">
+    {comparisonListings.length > 0 && <aside data-comparison-tray aria-labelledby="compare-tray-title" className="fixed inset-x-3 z-40 mx-auto max-h-[calc(100dvh-1.5rem)] max-w-4xl overflow-y-auto rounded-2xl border border-blue-200 bg-white/95 p-4 shadow-xl backdrop-blur sm:inset-x-6 sm:max-h-[calc(100dvh-2.5rem)]">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <div className="flex items-center gap-3"><h2 id="compare-tray-title" className="font-bold text-slate-950">Compare laptops</h2><button type="button" onClick={resetComparison} className="min-h-10 rounded-lg px-2 text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Clear comparison</button></div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1"><h2 id="compare-tray-title" className="font-bold text-slate-950">Compare laptops</h2><button type="button" onClick={resetComparison} className="min-h-11 rounded-lg px-2 text-xs font-bold text-slate-600 underline decoration-slate-300 underline-offset-4 hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Clear comparison</button></div>
           <ul className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:gap-2">
-            {comparisonListings.map((listing) => <li key={listing.id} className="flex min-w-0 items-center gap-2 rounded-lg bg-slate-100 py-1 pl-3 pr-1 text-sm font-semibold text-slate-800"><span className="truncate">{listing.model}</span><button type="button" onClick={() => toggleComparison(listing.id)} aria-label={`Remove ${listing.title} from comparison`} className="flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-md text-lg text-slate-500 hover:bg-white hover:text-red-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-700">×</button></li>)}
+            {comparisonListings.map((listing) => <li key={listing.id} className="flex max-w-full min-w-0 items-center gap-2 rounded-lg bg-slate-100 py-1 pl-3 pr-1 text-sm font-semibold text-slate-800"><span className="truncate">{listing.model}</span><button type="button" onClick={() => toggleComparison(listing.id)} aria-label={`Remove ${listing.title} from comparison`} className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-lg text-slate-500 hover:bg-white hover:text-red-700 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-700">×</button></li>)}
           </ul>
           <p className="mt-1 min-h-5 text-xs text-slate-600" aria-live="polite">{comparisonMessage || (comparisonListings.length === 1 ? "Select one more laptop to compare." : "Two laptops selected and ready to compare.")}</p>
         </div>

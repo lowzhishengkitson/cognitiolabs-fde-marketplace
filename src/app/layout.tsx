@@ -7,11 +7,11 @@ export const metadata: Metadata = { title: "Second Loop | Pre-owned laptops", de
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return <html lang="en"><body className="min-h-screen antialiased">
     <header className="border-b border-slate-200 bg-white">
-      <nav aria-label="Main navigation" className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="rounded-md text-xl font-extrabold tracking-tight text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">second<span className="text-blue-700">loop</span><span className="sr-only"> home</span></Link>
-        <div className="flex items-center gap-1 sm:gap-2">
-          <Link href="/#catalogue" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Browse</Link>
-          <Link href="/notes" className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Project notes</Link>
+      <nav aria-label="Main navigation" className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-1 px-4 py-2 sm:px-6">
+        <Link href="/" className="inline-flex min-h-11 shrink-0 items-center rounded-md text-xl font-extrabold tracking-tight text-slate-950 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">second<span className="text-blue-700">loop</span><span className="sr-only"> home</span></Link>
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+          <Link href="/#catalogue" className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Browse</Link>
+          <Link href="/notes" className="inline-flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Project notes</Link>
         </div>
       </nav>
     </header>

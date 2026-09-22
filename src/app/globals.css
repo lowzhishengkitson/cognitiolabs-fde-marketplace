@@ -4,3 +4,13 @@ html { scroll-behavior: smooth; }
 body { background: #f8fafc; color: #0f172a; }
 button, a, input { -webkit-tap-highlight-color: transparent; }
 ::selection { background: #bfdbfe; color: #172554; }
+
+/* Let content scroll fully above the fixed comparison tray, including the
+   catalogue assistant and footer that live outside MarketplaceSearch. */
+body:has([data-comparison-tray]) { padding-bottom: 18rem; }
+[data-comparison-tray] { bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+
+@media (min-width: 640px) {
+  body:has([data-comparison-tray]) { padding-bottom: 10rem; }
+  [data-comparison-tray] { bottom: max(1.25rem, env(safe-area-inset-bottom)); }
+}

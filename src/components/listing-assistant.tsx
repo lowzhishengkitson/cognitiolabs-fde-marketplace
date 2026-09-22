@@ -82,13 +82,13 @@ export function ListingAssistant({ listingId, title }: { listingId: string; titl
       </button>
     </form>
     <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-2 sm:flex-wrap sm:overflow-visible" aria-label="Suggested listing questions">
-      {suggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => suggest(suggestion)} disabled={loading} className="min-h-10 shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:opacity-50">{suggestion}</button>)}
+      {suggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => suggest(suggestion)} disabled={loading} className="min-h-11 shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:opacity-50">{suggestion}</button>)}
     </div>
     <div className="min-h-6" aria-live="polite" aria-busy={loading}>
       {loading && <p className="mt-3 text-sm font-medium text-slate-600">Checking this listing…</p>}
       {error && <div role="alert" className="mt-4 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between">
         <p>{error}</p>
-        <button type="button" onClick={() => void ask(question)} disabled={loading} className="min-h-10 self-start rounded-lg border border-red-300 bg-white px-4 font-semibold hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 sm:self-auto">Try again</button>
+        <button type="button" onClick={() => void ask(question)} disabled={loading} className="min-h-11 self-start rounded-lg border border-red-300 bg-white px-4 font-semibold hover:bg-red-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 sm:self-auto">Try again</button>
       </div>}
       {result && <article className={`mt-5 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 ${loading ? "opacity-70" : ""}`}>
         <div className="p-4 sm:p-5">
@@ -98,7 +98,7 @@ export function ListingAssistant({ listingId, title }: { listingId: string; titl
         </div>
         <div className="border-t border-slate-200 bg-white p-4 sm:px-5">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Based on this listing</p>
-          <ul className="mt-2 flex flex-wrap gap-2">{result.sources.map((source) => <li key={source.id}><Link href={`/listing/${source.id}`} className="inline-flex min-h-10 items-center rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-blue-700 hover:border-blue-300 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">{source.title}</Link></li>)}</ul>
+          <ul className="mt-2 flex flex-wrap gap-2">{result.sources.map((source) => <li key={source.id} className="max-w-full"><Link href={`/listing/${source.id}`} className="inline-flex min-h-11 max-w-full items-center break-words rounded-full border border-slate-200 px-3 py-2 text-left text-sm font-semibold text-blue-700 hover:border-blue-300 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">{source.title}</Link></li>)}</ul>
         </div>
       </article>}
     </div>
