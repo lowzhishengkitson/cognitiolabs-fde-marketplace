@@ -4,6 +4,7 @@ import { listings } from "@/data/listings";
 import { ListingImage } from "@/components/listing-image";
 import { buildComparisonRows, buildComparisonSummary, parseComparisonIds, resolveComparisonListings } from "@/lib/listings/comparison";
 import { formatPrice } from "@/lib/listings/format";
+import { ComparisonAssistant } from "@/components/comparison-assistant";
 
 export const metadata: Metadata = { title: "Compare laptops | Second Loop", description: "Compare two seeded Second Loop laptop listings side-by-side." };
 
@@ -73,5 +74,6 @@ export default async function ComparePage({ searchParams }: Props) {
         </section>)}
       </div>
     </section>
+    <ComparisonAssistant listingIds={[first.id, second.id]} />
   </main>;
 }
