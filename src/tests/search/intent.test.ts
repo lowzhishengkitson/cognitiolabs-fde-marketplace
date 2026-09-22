@@ -74,7 +74,43 @@ test("local parser recognizes explicit sorting and numerical constraints", () =>
     ["sort by RAM descending", "ramGB", "desc"], ["best battery health first", "batteryHealth", "desc"],
     ["sort by storage ascending", "storageGB", "asc"],
   ] as const) assert.deepEqual(parseLocally(query).sort, { field, direction }, query);
-  assert.deepEqual(parseLocally("lightweight laptop for Unity").sort, undefined);
+  assert.deepEqual(parseLocally("lightweight laptop for Unity").sort, { field: "weightKg", direction: "asc" });
+});
+
+test("qualitative numeric preferences create deterministic sorts without thresholds", () => {
+  for (const [query, field, direction] of [
+    ["Laptops which are low weight", "weightKg", "asc"],
+    ["light laptops", "weightKg", "asc"],
+    ["lighter laptops", "weightKg", "asc"],
+    ["lightweight laptops", "weightKg", "asc"],
+    ["portable laptops", "weightKg", "asc"],
+    ["laptops with high battery health", "batteryHealth", "desc"],
+    ["laptops with good battery health", "batteryHealth", "desc"],
+    ["laptops with lots of RAM", "ramGB", "desc"],
+    ["laptops with high RAM", "ramGB", "desc"],
+    ["laptops with more RAM", "ramGB", "desc"],
+    ["laptops with lots of storage", "storageGB", "desc"],
+    ["laptops with large storage", "storageGB", "desc"],
+    ["cheap laptops", "price", "asc"],
+    ["inexpensive laptops", "price", "asc"],
+    ["affordable laptops", "price", "asc"],
+  ] as const) {
+    const intent = parseLocally(query);
+    assert.deepEqual(intent.sort, { field, direction }, query);
+    assert.equal(intent.maxWeightKg, undefined, query);
+    assert.equal(intent.maxPrice, undefined, query);
+  }
+  assert.deepEqual(parseLocally("Laptops which are low weight").preferences, ["lightweight"]);
+});
+
+test("explicit sorts override qualitative sorts while numeric filters remain separate", () => {
+  assert.deepEqual(parseLocally("lightweight laptops, most expensive first").sort, { field: "price", direction: "desc" });
+  const light = parseLocally("laptops under 1.6kg");
+  assert.equal(light.maxWeightKg, 1.6);
+  assert.deepEqual(light.sort, { field: "weightKg", direction: "asc" });
+  const heaviest = parseLocally("laptops under 1.6kg, heaviest first");
+  assert.equal(heaviest.maxWeightKg, 1.6);
+  assert.deepEqual(heaviest.sort, { field: "weightKg", direction: "desc" });
 });
 
 test("sort schema rejects invalid fields and directions", () => {

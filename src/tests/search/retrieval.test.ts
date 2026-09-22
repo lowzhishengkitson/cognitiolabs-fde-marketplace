@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { listings } from "../../data/listings";
+import { listings, type Listing } from "../../data/listings";
 import { searchWithFallback } from "../../lib/search/service";
 import { cosineSimilarity, createSemanticRetriever, listingToEmbeddingText, rankBySimilarity } from "../../lib/search/retrieval/semantic";
 import { classifyEmbeddingFailure, InvalidEmbeddingError, MissingEmbeddingKeyError } from "../../lib/search/retrieval/errors";
@@ -109,4 +109,34 @@ test("fallback also honors explicit sort; unsorted semantic results retain simil
   assert.deepEqual(fallback.listings.map((item) => item.price), [420, 760]);
   const semantic = rankBySimilarity(subset, [[0.9, 0.1], [0.8, 0.2], [1, 0], [0.7, 0.3]], [1, 0], { useCase: "Unity development" });
   assert.deepEqual(semantic.map(({ listing }) => listing.id), ["latitude-5420", "thinkpad-t14", "rog-g14", "envy-x360"]);
+});
+
+test("semantic and fallback paths apply the same qualitative deterministic ordering", async () => {
+  const retrieve = async (_query: string, options: { catalogue: readonly Listing[] }) =>
+    [...options.catalogue].reverse().map((listing, index) => ({ listing, score: 1 - index / 100 }));
+  const cases = [
+    ["Laptops which are low weight", "weightKg", "asc"],
+    ["lightweight laptops", "weightKg", "asc"],
+    ["cheap laptops", "price", "asc"],
+    ["laptops with high battery health", "batteryHealth", "desc"],
+    ["laptops with lots of RAM", "ramGB", "desc"],
+    ["lightweight laptops, most expensive first", "price", "desc"],
+  ] as const;
+  for (const [query, field, direction] of cases) {
+    const semantic = await searchWithFallback(query, listings, retrieve, () => assert.fail("Unexpected fallback"));
+    const fallback = await searchWithFallback(query, listings, async () => { throw Error("offline"); }, () => "gateway-error");
+    const expected = [...listings].sort((a, b) => (a[field] - b[field]) * (direction === "asc" ? 1 : -1)).map((item) => item[field]);
+    assert.deepEqual(semantic.listings.map((item) => item[field]), expected, `semantic: ${query}`);
+    assert.deepEqual(fallback.listings.map((item) => item[field]), expected, `fallback: ${query}`);
+  }
+});
+
+test("weight constraints filter before implicit or explicit weight ordering", async () => {
+  const retrieve = createSemanticRetriever(async (texts) => texts.map((_text, index) => [index + 1, 1]));
+  for (const [query, direction] of [["laptops under 1.6kg", "asc"], ["laptops under 1.6kg, heaviest first", "desc"]] as const) {
+    const result = await searchWithFallback(query, listings, retrieve, () => assert.fail("Unexpected fallback"));
+    assert.ok(result.listings.every((item) => item.weightKg <= 1.6));
+    const weights = result.listings.map((item) => item.weightKg);
+    assert.deepEqual(weights, [...weights].sort((a, b) => (a - b) * (direction === "asc" ? 1 : -1)));
+  }
 });
