@@ -6,46 +6,50 @@ const sections = [
   {
     title: "What I built and who it is for",
     points: [
-      "Second Loop is a phone-friendly second-hand laptop marketplace demo for people comparing options for study, work, travel, and gaming. Anyone can browse listings and open a detail page without signing in.",
-      "Search accepts a natural-language query. The server embeds the query and seeded listings, filters explicit constraints such as a maximum price or minimum RAM in TypeScript, then orders eligible listings by cosine similarity. The model does not choose listing IDs or change catalogue facts.",
-      "Catalogue Q&A classifies exact facts, filtered rankings, named comparisons, missing information, and open-ended recommendations. TypeScript computes extrema and numeric comparison relationships over the correct catalogue scope; only recommendations use semantic retrieval and chat. Answers link to their supporting listings.",
+      "Second Loop is a mobile-friendly second-hand laptop marketplace for buyers comparing used laptops for study, work, travel, programming, and gaming. It supports catalogue browsing, detailed listings, natural-language search, two-laptop comparison, and grounded Q&A without requiring sign-in.",
+      "TypeScript owns catalogue truth. It applies search constraints and sorts, computes extrema and comparison differences, answers exact specification questions, detects known missing information, and validates model source IDs. Embeddings improve semantic relevance, while the chat model explains grounded facts when interpretation is useful.",
+      "Search results show interpreted requirements and deterministic ‘Why this matched’ reasons. Comparison works without AI; comparison Q&A is an explanatory layer over facts already computed by the application.",
     ],
   },
   {
-    title: "Seeded and simulated features",
+    title: "Seeded / simulated / limited",
     points: [
-      "The 50 laptops, prices, condition descriptions, battery health figures, and seller locations are illustrative local TypeScript data. There are no real sellers or transactions, and the laptop artwork is a placeholder.",
-      "Catalogue embeddings are cached in memory per server process. A serverless cold start or another instance may generate them again; no vectors or listings are stored in a database.",
+      "The catalogue contains 50 seeded TypeScript listings. Prices, conditions, descriptions, battery-health figures, and seller locations are illustrative; there are no real sellers or transactions.",
+      "The image components support local files under /public/listings and fall back safely when an image is absent. The current catalogue uses neutral placeholders rather than real product photography.",
+      "Listings and vectors are not stored in a database. Catalogue embeddings are cached per server process, so a cold start or another server instance may generate them again.",
     ],
   },
   {
-    title: "AI coding tools and models",
+    title: "AI tools and models",
     points: [
-      "I used Codex to develop this prototype and checked search and Q&A with automated tests using mocked model requests. Semantic retrieval uses openai/text-embedding-3-small and catalogue Q&A uses openai/gpt-4o-mini through the CognitioLabs-provided gateway. The key stays on the server.",
-      "Exact and named numeric answers are produced from authoritative computed facts, preventing the chat model from reversing values. Recommendation Q&A supplies actual catalogue records as JSON and instructs the model to treat seller text as untrusted data. Missing facts must be acknowledged; battery health does not establish battery runtime. Real gateway responses have not yet been verified in this environment.",
+      "Codex was used as the AI coding tool. Semantic retrieval uses openai/text-embedding-3-small, and grounded explanations use openai/gpt-4o-mini through the CognitioLabs-provided OpenRouter-compatible gateway. CLASSGW_KEY is read only by server-side code.",
+      "Catalogue Q&A computes exact and global facts over the correct catalogue scope, using semantic retrieval only for open-ended recommendations. Product Q&A answers exact facts from one authoritative listing without embeddings. Comparison Q&A receives exactly two listings and TypeScript-computed numeric differences.",
+      "The production deployment and gateway-backed embedding and chat flows were verified end-to-end after deployment. Automated tests use mocked model requests and do not consume live gateway allowance.",
     ],
   },
   {
     title: "Features intentionally not built",
     points: [
-      "I prioritized a browsable catalogue, item details, and searchable results. Authentication, payments, messaging, logistics, and database integration are outside this demo's current scope.",
-      "Q&A is a single-question interaction, without persistent conversations. Authentication, payments, messaging, and real seller transactions are not implemented.",
+      "Authentication, payments, messaging, delivery and collection logistics, real seller accounts, moderation, and transaction infrastructure were deliberately left outside the assessment scope.",
+      "There is no persistent database, vector store, or conversation history. Q&A is a focused one-question interaction rather than a persistent chatbot.",
+      "This scope prioritizes a demonstrable buyer journey, deterministic catalogue correctness, grounded model use, and graceful failure behavior.",
     ],
   },
   {
-    title: "Known issues and unfinished work",
+    title: "Known issues / remaining limitations",
     points: [
-      "If embedding retrieval fails or the key is missing, search falls back to a limited local phrase parser and deterministic ranking. A vague query may show all listings because the parser recognizes only common explicit constraints and a few preferences.",
-      "The search API labels results as embedding or local-fallback and provides a coarse fallback reason. Q&A instead reports temporary unavailability if its gateway fails. I still need to verify real embedding and chat gateway responses and the deployed experience with the candidate key; listing images remain placeholders.",
+      "If embedding retrieval or CLASSGW_KEY is unavailable, marketplace search falls back to local deterministic parsing and preference scoring. Hard constraints and explicit sorts remain enforced, but open-ended semantic relevance is more limited.",
+      "Interpretive Q&A depends on the provided gateway and reports temporary unavailability rather than fabricating an answer. Deterministic factual answers continue to work without chat where supported.",
+      "Seller text is treated as untrusted data, model source IDs are validated server-side, and missing catalogue facts are acknowledged. Battery-health percentage does not establish real battery runtime, and no external product specifications are inferred.",
     ],
   },
 ];
 
 export default function NotesPage() {
   return <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
-    <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700 sm:text-sm">Public documentation</p>
+    <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700 sm:text-sm">Assessment disclosure</p>
     <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Project notes</h1>
-    <p className="mt-3 max-w-2xl leading-7 text-slate-600">What I built, how search and catalogue Q&A work, and what remains outside this demo.</p>
+    <p className="mt-3 max-w-2xl leading-7 text-slate-600">What Second Loop implements, where AI is used, and what remains intentionally outside this demo.</p>
     <div className="mt-8 space-y-4">
       {sections.map((section) => <section key={section.title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-xl font-bold text-slate-950">{section.title}</h2>
