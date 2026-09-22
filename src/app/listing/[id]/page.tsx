@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getListing, listings } from "@/data/listings";
 import { formatPrice, formatStorage } from "@/lib/listings/format";
 import { ListingGallery } from "@/components/listing-gallery";
+import { ListingAssistant } from "@/components/listing-assistant";
 
 type Props = { params: Promise<{ id: string }> };
 export function generateStaticParams() { return listings.map(({ id }) => ({ id })); }
@@ -53,6 +54,7 @@ export default async function ListingPage({ params }: Props) {
             <p className="mt-1 text-sm text-slate-500">Facts supplied by this seeded catalogue listing.</p>
             <dl className="mt-4 grid gap-x-10 sm:grid-cols-2">{specs.map(([label, value]) => <div key={label} className="flex min-w-0 justify-between gap-4 border-t border-slate-100 py-3.5 text-sm"><dt className="shrink-0 text-slate-500">{label}</dt><dd className="min-w-0 break-words text-right font-semibold text-slate-800">{value}</dd></div>)}</dl>
           </section>
+          <ListingAssistant listingId={item.id} title={item.title} />
         </div>
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7 lg:sticky lg:top-24" aria-labelledby="location-heading">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700" aria-hidden="true"><svg viewBox="0 0 20 20" className="h-5 w-5" fill="currentColor"><path fillRule="evenodd" d="M10 18s6-5.1 6-11A6 6 0 1 0 4 7c0 5.9 6 11 6 11Zm0-8.5A2.5 2.5 0 1 0 10 4a2.5 2.5 0 0 0 0 5.5Z" clipRule="evenodd"/></svg></div>
