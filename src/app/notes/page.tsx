@@ -8,7 +8,7 @@ const sections = [
     points: [
       "Second Loop is a phone-friendly second-hand laptop marketplace demo for people comparing options for study, work, travel, and gaming. Anyone can browse listings and open a detail page without signing in.",
       "Search accepts a natural-language query. The server embeds the query and seeded listings, filters explicit constraints such as a maximum price or minimum RAM in TypeScript, then orders eligible listings by cosine similarity. The model does not choose listing IDs or change catalogue facts.",
-      "Catalogue Q&A answers questions and comparisons from selected seeded listings. Broad numeric questions use deterministic checks over the full catalogue; open-ended questions use semantic retrieval to find relevant records. Answers link to their supporting listings.",
+      "Catalogue Q&A classifies exact facts, filtered rankings, named comparisons, missing information, and open-ended recommendations. TypeScript computes extrema and numeric comparison relationships over the correct catalogue scope; only recommendations use semantic retrieval and chat. Answers link to their supporting listings.",
     ],
   },
   {
@@ -22,7 +22,7 @@ const sections = [
     title: "AI coding tools and models",
     points: [
       "I used Codex to develop this prototype and checked search and Q&A with automated tests using mocked model requests. Semantic retrieval uses openai/text-embedding-3-small and catalogue Q&A uses openai/gpt-4o-mini through the CognitioLabs-provided gateway. The key stays on the server.",
-      "Q&A supplies actual catalogue records as JSON and instructs the model to treat seller text as untrusted data. Missing facts must be acknowledged; battery health does not establish battery runtime. Real gateway responses have not yet been verified in this environment.",
+      "Exact and named numeric answers are produced from authoritative computed facts, preventing the chat model from reversing values. Recommendation Q&A supplies actual catalogue records as JSON and instructs the model to treat seller text as untrusted data. Missing facts must be acknowledged; battery health does not establish battery runtime. Real gateway responses have not yet been verified in this environment.",
     ],
   },
   {

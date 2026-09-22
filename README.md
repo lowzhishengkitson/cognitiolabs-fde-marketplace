@@ -26,7 +26,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). On Windows PowerShell, copy `.env.example` to `.env.local` with `Copy-Item .env.example .env.local`. If PowerShell blocks `npm.ps1`, run `npm.cmd` in place of `npm`.
 
-Search works without a key through the limited local parser. Q&A requires a working gateway. To try semantic retrieval and Q&A, set this variable in `.env.local` and restart the development server:
+Search works without a key through the limited local parser. Exact Q&A facts and named comparisons are also computed locally; semantic recommendations require a working gateway. To try semantic retrieval and recommendation Q&A, set this variable in `.env.local` and restart the development server:
 
 ```dotenv
 CLASSGW_KEY=your-candidate-gateway-key
@@ -56,11 +56,11 @@ The embedding integration has been tested with mocked vectors, but **a real Cogn
 
 ## Catalogue Q&A
 
-The question panel sends `{ "question": "..." }` to `POST /api/qa`. It reuses the server-side embedding retriever for open-ended questions, selecting up to six relevant catalogue records. Named product comparisons select the named records directly. For broad extrema such as “lightest” or “best battery health under $800,” deterministic TypeScript filters and sorts the entire catalogue first so an embedding shortlist cannot omit the true winner.
+The question panel sends `{ "question": "..." }` to `POST /api/qa`. Questions are classified as missing-information, named-comparison, exact-factual, or semantic-recommendation. Exact global and filtered extrema are computed over the correct catalogue scope in TypeScript. Named products are resolved from IDs, models, titles, and controlled aliases, and their numeric relationships are computed before an answer is produced.
 
-The server sends the selected records as JSON to `openai/gpt-4o-mini` with instructions to use only catalogue facts and treat seller descriptions as untrusted data. The model returns an answer and source IDs; source IDs are checked against the supplied records before links are shown. This reduces hallucinations but does not mechanically verify every sentence of model prose. Unavailable facts must be identified explicitly. In particular, battery health percentages cannot establish battery runtime, so questions asking which lasts longest receive an explicit “not available” response. If retrieval or chat fails, Q&A returns a temporary-unavailability error rather than fabricating an answer. Search retains its separate local fallback.
+Exact facts and named numeric comparisons return deterministic answers and computed fact metadata, so the chat model cannot reverse values or global rankings. Only open-ended recommendations use embeddings and `openai/gpt-4o-mini`; the server sends the selected records as JSON, validates source IDs, and treats seller descriptions as untrusted data. Unavailable facts remain explicit. In particular, battery health percentages cannot establish battery runtime. If retrieval or chat fails, semantic Q&A reports temporary unavailability rather than fabricating an answer. Search retains its separate local fallback.
 
-To verify a live response, configure `CLASSGW_KEY`, run `npm run dev`, ask an open-ended question, and inspect `/api/qa` in the browser Network panel: a successful `200` response contains `answer` and real catalogue `sources`. Ask “Which laptop is lightest?” to exercise full-catalogue selection and the chat model; that question does not require an embedding request. A `503` indicates the gateway or response failed. The tests use mocks and do not verify live gateway access.
+To verify a live response, configure `CLASSGW_KEY`, run `npm run dev`, ask an open-ended recommendation such as “good for travelling and programming,” and inspect `/api/qa` in the browser Network panel. A successful `200` response contains `answer` and real catalogue `sources`; a `503` indicates retrieval or chat failed. Exact questions such as “Which laptop is lightest?” intentionally do not call the gateway. The tests use mocks and do not verify live gateway access.
 
 ## Code map
 
