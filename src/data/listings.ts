@@ -1,7 +1,7 @@
 export type Listing = {
   id: string; title: string; brand: string; model: string; price: number;
-  /** Optional local path under /public, for example /listings/thinkpad-t14.webp. */
-  image?: string;
+  /** Optional local paths under /public, for example /listings/thinkpad-t14.webp. */
+  images?: string[];
   cpu: string; gpu: string; ramGB: number; storageGB: number;
   screenSizeInches: number; weightKg: number;
   condition: "Like new" | "Good" | "Fair"; batteryHealth: number;
