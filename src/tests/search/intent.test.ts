@@ -11,7 +11,8 @@ test("rejects malformed and contradictory model output", () => {
   assert.equal(searchIntentSchema.safeParse({ maxPrice: "800" }).success, false);
   assert.equal(searchIntentSchema.safeParse({ minPrice: 1000, maxPrice: 800 }).success, false);
   assert.equal(searchIntentSchema.safeParse({ maxPrice: 800, hallucinatedField: true }).success, false);
-  assert.equal(searchIntentSchema.safeParse({ minRamGB: 1000 }).success, false);
+  assert.equal(searchIntentSchema.safeParse({ minRamGB: 1_000_000 }).success, true);
+  assert.equal(searchIntentSchema.safeParse({ minRamGB: 1_000_000_001 }).success, false);
   assert.equal(searchIntentSchema.safeParse({ minStorageGB: -1 }).success, false);
   assert.equal(searchIntentSchema.safeParse({ maxWeightKg: 0 }).success, false);
 });
@@ -80,4 +81,15 @@ test("sort schema rejects invalid fields and directions", () => {
   assert.equal(searchIntentSchema.safeParse({ sort: { field: "cpu", direction: "asc" } }).success, false);
   assert.equal(searchIntentSchema.safeParse({ sort: { field: "price", direction: "up" } }).success, false);
   assert.equal(searchIntentSchema.safeParse({ sort: { field: "price", direction: "asc", extra: true } }).success, false);
+});
+
+test("RAM and storage capacities preserve explicit GB/TB constraints", () => {
+  assert.equal(parseLocally("at least 16GB RAM").minRamGB, 16);
+  assert.equal(parseLocally("at least 1TB RAM").minRamGB, 1000);
+  assert.equal(parseLocally("at least 1000TB RAM").minRamGB, 1_000_000);
+  assert.equal(parseLocally("at least 999999GB RAM").minRamGB, 999_999);
+  assert.equal(parseLocally("at least 2TB storage").minStorageGB, 2000);
+  const malformed = parseLocally("at least 20 bananas RAM");
+  assert.equal(malformed.minRamGB, undefined);
+  assert.equal(malformed.minPrice, undefined);
 });

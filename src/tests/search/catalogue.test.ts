@@ -19,6 +19,14 @@ test("impossible constraints return no matches", () => {
   assert.deepEqual(searchCatalogue(listings, { maxPrice: 400, minRamGB: 32 }), []);
 });
 
+test("impossible capacity constraints remain hard filters", () => {
+  assert.deepEqual(searchCatalogue(listings, { minRamGB: 1000 }), []);
+  assert.deepEqual(searchCatalogue(listings, { minRamGB: 1_000_000 }), []);
+  assert.deepEqual(searchCatalogue(listings, { minRamGB: 999_999 }), []);
+  assert.ok(searchCatalogue(listings, { minStorageGB: 2000 }).every((item) => item.storageGB >= 2000));
+  assert.deepEqual(searchCatalogue(listings, { minRamGB: 16 }).every((item) => item.ramGB >= 16), true);
+});
+
 test("gaming favors dedicated GPU while programming favors 16GB RAM", () => {
   assert.match(searchCatalogue(listings, { useCase: "Unity development" })[0].gpu, /radeon rx|geforce|rtx|gtx/i);
   assert.ok(searchCatalogue(listings, { useCase: "programming" }).slice(0, 3).every((item) => item.ramGB >= 16));

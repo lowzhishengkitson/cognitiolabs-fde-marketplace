@@ -9,10 +9,11 @@ export function parseLocally(query: string): SearchIntent
     const match = text.match(pattern);
     return match ? Number(match[1]) : undefined;
   };
-  const minPrice = numberAfter(new RegExp(String.raw`(?:over|above|more than|at least|minimum|min)\s+${amount}(?!\s*(?:gb|tb|kg))`, "i"));
+  const minPrice = numberAfter(new RegExp(String.raw`(?:over|above|more than|at least|minimum|min)\s+${amount}(?!\s*(?:gb|tb|kg|[a-z]+\s+ram\b))`, "i"));
   const maxPrice = numberAfter(new RegExp(String.raw`(?:under|below|less than|up to|maximum|max|budget of)\s+${amount}(?!\s*(?:gb|tb|kg))`, "i"));
-  const minRamGB = numberAfter(/(?:at least|minimum|min|over|more than)\s+(\d+)\s*gb\s*(?:of\s*)?(?:ram|memory)/i)
-    ?? numberAfter(/(?:at least|minimum|min)\s+(\d+)\s*gb\b(?!\s*(?:storage|ssd))/i)
+  const ram = text.match(/(?:at least|minimum|min|over|more than)\s+(\d+(?:\.\d+)?)\s*(gb|tb)\s*(?:of\s*)?(?:ram|memory)/i);
+  const minRamGB = ram ? Number(ram[1]) * (ram[2].toLowerCase() === "tb" ? 1000 : 1)
+    : numberAfter(/(?:at least|minimum|min)\s+(\d+(?:\.\d+)?)\s*gb\b(?!\s*(?:storage|ssd))/i)
     ?? numberAfter(/\b(\d+)\s*gb\s*(?:ram\s*)?laptops?\b/i);
   const storage = text.match(/(?:at least|minimum|min)\s+(\d+(?:\.\d+)?)\s*(tb|gb)\s*(?:of\s*)?(?:storage|ssd|disk)/i);
   const maxWeightKg = numberAfter(/(?:under|below|less than|up to|max(?:imum)?)\s+(\d+(?:\.\d+)?)\s*kg/i);
