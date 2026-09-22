@@ -4,7 +4,8 @@ import type { SearchIntent } from "./search-intent";
 
 export type CognitioConfig = { apiUrl: string; apiKey: string; model: string };
 
-export function getCognitioConfig(): CognitioConfig | null {
+export function getCognitioConfig(): CognitioConfig | null 
+{
   const apiUrl = process.env.COGNITIO_API_URL;
   const apiKey = process.env.COGNITIO_API_KEY;
   const model = process.env.COGNITIO_MODEL;
@@ -14,7 +15,8 @@ export function getCognitioConfig(): CognitioConfig | null {
 // Adapter assumption: the supplied URL accepts an OpenAI-compatible chat
 // completions request and returns choices[0].message.content as JSON text.
 // Confirm the request and response against the Cognitio console documentation.
-export async function parseSearchIntentWithLLM(query: string, config: CognitioConfig): Promise<SearchIntent> {
+export async function parseSearchIntentWithLLM(query: string, config: CognitioConfig): Promise<SearchIntent> 
+{
   const response = await fetch(config.apiUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${config.apiKey}` },
@@ -30,6 +32,7 @@ export async function parseSearchIntentWithLLM(query: string, config: CognitioCo
     signal: AbortSignal.timeout(10_000),
     cache: "no-store",
   });
-  if (!response.ok) throw new Error("Model HTTP failure");
+  if (!response.ok) 
+    throw new Error("Model HTTP failure");
   return parseModelIntentResponse(await response.json());
 }

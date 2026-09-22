@@ -2,12 +2,11 @@ import "server-only";
 import { getCognitioConfig, parseSearchIntentWithLLM } from "./cognitio-gateway";
 import { resolveSearchIntent } from "./intent-fallback";
 
-export async function extractSearchIntent(query: string) {
+export async function extractSearchIntent(query: string) 
+{
   const config = getCognitioConfig();
-  return resolveSearchIntent(
-    query,
+  return resolveSearchIntent(query,
     config ? () => parseSearchIntentWithLLM(query, config) : null,
-    // Deliberately omit the error, query, provider response and credentials.
     () => console.warn("Search intent model failed; using local fallback."),
   );
 }

@@ -3,7 +3,8 @@ import { filterCatalogue } from "./search-catalogue";
 import type { SearchIntent } from "./search-intent";
 import { InvalidEmbeddingError } from "./embedding-errors";
 
-export function listingToEmbeddingText(item: Listing): string {
+export function listingToEmbeddingText(item: Listing): string 
+{
   return [
     `Title: ${item.title}`, `Brand: ${item.brand}`, `Model: ${item.model}`,
     `Price: SGD ${item.price}`, `CPU: ${item.cpu}`, `GPU: ${item.gpu}`,
@@ -14,14 +15,17 @@ export function listingToEmbeddingText(item: Listing): string {
   ].join("\n");
 }
 
-function validVector(vector: readonly number[]): boolean {
+function validVector(vector: readonly number[]): boolean 
+{
   return vector.length > 0 && vector.every((value) => Number.isFinite(value));
 }
 
-export function cosineSimilarity(a: readonly number[], b: readonly number[]): number {
+export function cosineSimilarity(a: readonly number[], b: readonly number[]): number 
+{
   if (a.length !== b.length || !validVector(a) || !validVector(b)) throw new InvalidEmbeddingError("Invalid embedding vectors");
   let dot = 0, aNorm = 0, bNorm = 0;
-  for (let index = 0; index < a.length; index++) {
+  for (let index = 0; index < a.length; index++) 
+  {
     dot += a[index] * b[index];
     aNorm += a[index] ** 2;
     bNorm += b[index] ** 2;
@@ -32,10 +36,12 @@ export function cosineSimilarity(a: readonly number[], b: readonly number[]): nu
 
 export type ScoredListing = { listing: Listing; score: number };
 
-export function rankBySimilarity(
-  catalogue: readonly Listing[], vectors: readonly (readonly number[])[], queryVector: readonly number[], intent: SearchIntent,
-): ScoredListing[] {
-  if (catalogue.length !== vectors.length) throw new InvalidEmbeddingError("Catalogue and embedding count differ");
+export function rankBySimilarity(catalogue: readonly Listing[], 
+  vectors: readonly (readonly number[])[], 
+  queryVector: readonly number[], intent: SearchIntent,): ScoredListing[] 
+{
+  if (catalogue.length !== vectors.length) 
+    throw new InvalidEmbeddingError("Catalogue and embedding count differ");
   const scores = catalogue.map((listing, index) => ({ listing, index, score: cosineSimilarity(queryVector, vectors[index]) }));
   const eligible = new Set(filterCatalogue(catalogue, intent).map((item) => item.id));
   return scores.filter(({ listing }) => eligible.has(listing.id))
@@ -47,22 +53,26 @@ export type EmbedTexts = (texts: string[]) => Promise<number[][]>;
 
 // Process-local cache. The key changes if any seeded listing text or order changes.
 // A shared in-flight promise prevents concurrent requests from re-embedding the catalogue.
-export function createSemanticRetriever(embedTexts: EmbedTexts) {
+export function createSemanticRetriever(embedTexts: EmbedTexts) 
+{
   let cached: { key: string; promise: Promise<number[][]> } | null = null;
-  return async function retrieveListings(
-    query: string, options: { catalogue: readonly Listing[]; intent: SearchIntent },
-  ): Promise<ScoredListing[]> {
-    if (!options.catalogue.length) return [];
+  return async function retrieveListings(query: string, 
+    options: { catalogue: readonly Listing[]; intent: SearchIntent },): Promise<ScoredListing[]> 
+  {
+    if (!options.catalogue.length) 
+      return [];
     const texts = options.catalogue.map(listingToEmbeddingText);
     const key = JSON.stringify(options.catalogue.map((listing, index) => [listing.id, texts[index]]));
-    if (cached?.key !== key) {
+    if (cached?.key !== key) 
+    {
       const promise = embedTexts(texts);
       cached = { key, promise };
       void promise.catch(() => { if (cached?.promise === promise) cached = null; });
     }
     const vectorsPromise = cached.promise;
     const [vectors, queryVectors] = await Promise.all([vectorsPromise, embedTexts([query])]);
-    if (queryVectors.length !== 1) throw new InvalidEmbeddingError("Expected one query embedding");
+    if (queryVectors.length !== 1) 
+      throw new InvalidEmbeddingError("Expected one query embedding");
     return rankBySimilarity(options.catalogue, vectors, queryVectors[0], options.intent);
   };
 }

@@ -1,7 +1,8 @@
 import { searchIntentSchema, type SearchIntent } from "./search-intent";
 
 // Useful before model credentials are available. Only recognizes explicit patterns.
-export function parseLocally(query: string): SearchIntent {
+export function parseLocally(query: string): SearchIntent 
+{
   const text = query.toLowerCase();
   const amount = String.raw`(?:s\$|\$|sgd\s*)?(\d+(?:\.\d+)?)(?![\d.])`;
   const numberAfter = (pattern: RegExp) => {
@@ -19,7 +20,8 @@ export function parseLocally(query: string): SearchIntent {
   const useCase = /unity|game development|3d/i.test(query) ? "Unity development" : /gam(?:e|ing)/i.test(query) ? "gaming" : /programm|cod(?:e|ing)|developer/i.test(query) ? "programming" : /student|university|school/i.test(query) ? "student" : undefined;
   const preferences = /lightweight|light weight|portable|travel/i.test(query) ? ["lightweight"] : undefined;
   const parsed = searchIntentSchema.safeParse({ minPrice, maxPrice, minRamGB, minStorageGB: storage ? Number(storage[1]) * (storage[2].toLowerCase() === "tb" ? 1000 : 1) : undefined, maxWeightKg, brand, condition, useCase, preferences });
-  if (!parsed.success) throw new Error("Could not interpret the search constraints.");
+  if (!parsed.success) 
+    throw new Error("Could not interpret the search constraints.");
   return parsed.data;
 }
 
