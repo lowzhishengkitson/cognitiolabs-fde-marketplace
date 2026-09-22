@@ -11,6 +11,10 @@ function matchesHardConstraints(item: Listing, intent: SearchIntent): boolean {
     && (intent.condition === undefined || item.condition === intent.condition);
 }
 
+export function filterCatalogue(catalogue: readonly Listing[], intent: SearchIntent): Listing[] {
+  return catalogue.filter((item) => matchesHardConstraints(item, intent));
+}
+
 function score(item: Listing, intent: SearchIntent): number {
   const terms = [intent.useCase, ...(intent.preferences ?? [])].filter((term): term is string => Boolean(term)).join(" ").toLowerCase();
   let points = 0;

@@ -5,7 +5,7 @@ import { ListingCard } from "@/components/listing-card";
 import type { Listing } from "@/data/listings";
 import type { SearchIntent } from "@/lib/search-intent";
 
-type SearchResponse = { interpretedIntent: SearchIntent; parser: "llm" | "local-fallback"; listings: Listing[] };
+type SearchResponse = { interpretedIntent: SearchIntent; retrieval: "embedding" | "local-fallback"; listings: Listing[]; scores: { id: string; score: number }[] };
 
 export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
   const [query, setQuery] = useState("");
@@ -61,7 +61,7 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
         <div><h2 id="listings-heading" className="text-2xl font-bold">{results ? "Search results" : "Available laptops"}</h2>{activeQuery && <p className="mt-1 text-sm text-slate-500">For “{activeQuery}”</p>}</div>
         <div className="flex items-center gap-3"><p className="text-sm text-slate-500">{displayed.length} {results ? "matches" : "sample listings"}</p>{(results || loading) && <button type="button" onClick={clear} className="text-sm font-semibold text-blue-700 hover:underline">Clear search</button>}</div>
       </div>
-      {process.env.NODE_ENV === "development" && results && <details className="mb-5 rounded-lg border border-slate-200 bg-white p-3 text-sm"><summary className="cursor-pointer font-medium">Search interpretation (development)</summary><p className="mt-2">Parser: {results.parser}</p><pre className="mt-2 overflow-x-auto text-xs">{JSON.stringify(results.interpretedIntent, null, 2)}</pre></details>}
+      {process.env.NODE_ENV === "development" && results && <details className="mb-5 rounded-lg border border-slate-200 bg-white p-3 text-sm"><summary className="cursor-pointer font-medium">Search details (development)</summary><p className="mt-2">Retrieval: {results.retrieval}</p><pre className="mt-2 overflow-x-auto text-xs">{JSON.stringify({ interpretedIntent: results.interpretedIntent, scores: results.scores }, null, 2)}</pre></details>}
       {displayed.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{displayed.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div> : <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center"><h3 className="text-lg font-semibold">No laptops match those constraints</h3><p className="mt-2 text-slate-600">Try a higher budget or fewer requirements.</p><button onClick={clear} className="mt-4 font-semibold text-blue-700 hover:underline">Show all laptops</button></div>}
     </section>
   </>;
