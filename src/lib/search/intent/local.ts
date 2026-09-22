@@ -1,4 +1,4 @@
-import { searchIntentSchema, type SearchIntent } from "./search-intent";
+import { searchIntentSchema, type SearchIntent } from "./schema";
 
 // Useful before model credentials are available. Only recognizes explicit patterns.
 export function parseLocally(query: string): SearchIntent 
@@ -24,4 +24,3 @@ export function parseLocally(query: string): SearchIntent
     throw new Error("Could not interpret the search constraints.");
   return parsed.data;
 }
-

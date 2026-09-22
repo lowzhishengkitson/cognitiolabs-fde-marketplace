@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Listing } from "@/data/listings";
-import { formatPrice, formatStorage } from "@/lib/format";
+import { formatPrice, formatStorage } from "@/lib/listings/format";
 
 export function ListingCard({ listing }: { listing: Listing }) {
   return <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">

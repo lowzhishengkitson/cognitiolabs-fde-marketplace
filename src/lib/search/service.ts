@@ -1,9 +1,9 @@
 import type { Listing } from "@/data/listings";
-import { parseLocally } from "./local-intent";
-import { searchCatalogue } from "./search-catalogue";
-import type { ScoredListing } from "./semantic-retrieval";
-import type { SearchIntent } from "./search-intent";
-import type { FallbackReason } from "./embedding-errors";
+import { parseLocally } from "./intent/local";
+import { searchCatalogue } from "./catalogue";
+import type { ScoredListing } from "./retrieval/semantic";
+import type { SearchIntent } from "./intent/schema";
+import type { FallbackReason } from "./retrieval/errors";
 
 export async function searchWithFallback(query: string,
   catalogue: readonly Listing[],

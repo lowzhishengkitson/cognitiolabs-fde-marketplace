@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { listings } from "@/data/listings";
-import { retrieveListings } from "@/lib/embedding-client";
-import { searchWithFallback } from "@/lib/search-service";
-import { classifyEmbeddingFailure } from "@/lib/embedding-errors";
+import { retrieveListings } from "@/lib/search/retrieval/embedding-client";
+import { searchWithFallback } from "@/lib/search/service";
+import { classifyEmbeddingFailure } from "@/lib/search/retrieval/errors";
 
 const requestSchema = z.strictObject({ query: z.string().trim().min(1).max(500) });
 

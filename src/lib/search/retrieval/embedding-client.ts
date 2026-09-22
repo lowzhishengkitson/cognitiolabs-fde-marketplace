@@ -1,7 +1,7 @@
 import "server-only";
 import OpenAI from "openai";
-import { InvalidEmbeddingError, MissingEmbeddingKeyError } from "./embedding-errors";
-import { createSemanticRetriever } from "./semantic-retrieval";
+import { InvalidEmbeddingError, MissingEmbeddingKeyError } from "./errors";
+import { createSemanticRetriever } from "./semantic";
 
 const EMBEDDING_MODEL = "openai/text-embedding-3-small";
 const GATEWAY_BASE_URL = "https://174.138.16.223/openrouter/v1";

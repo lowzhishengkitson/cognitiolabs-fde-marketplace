@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { listings } from "../data/listings";
-import { searchWithFallback } from "./search-service";
-import { cosineSimilarity, createSemanticRetriever, listingToEmbeddingText, rankBySimilarity } from "./semantic-retrieval";
-import { classifyEmbeddingFailure, InvalidEmbeddingError, MissingEmbeddingKeyError } from "./embedding-errors";
+import { listings } from "../../data/listings";
+import { searchWithFallback } from "../../lib/search/service";
+import { cosineSimilarity, createSemanticRetriever, listingToEmbeddingText, rankBySimilarity } from "../../lib/search/retrieval/semantic";
+import { classifyEmbeddingFailure, InvalidEmbeddingError, MissingEmbeddingKeyError } from "../../lib/search/retrieval/errors";
 
 test("listing embedding text serializes only catalogue fields", () => {
   const item = listings[0];

@@ -1,6 +1,6 @@
 import "server-only";
-import { parseModelIntentResponse } from "./model-intent-response";
-import type { SearchIntent } from "./search-intent";
+import { parseModelIntentResponse } from "./model-response";
+import type { SearchIntent } from "./schema";
 
 export type CognitioConfig = { apiUrl: string; apiKey: string; model: string };
 

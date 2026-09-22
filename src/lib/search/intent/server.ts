@@ -1,6 +1,6 @@
 import "server-only";
-import { getCognitioConfig, parseSearchIntentWithLLM } from "./cognitio-gateway";
-import { resolveSearchIntent } from "./intent-fallback";
+import { getCognitioConfig, parseSearchIntentWithLLM } from "./gateway";
+import { resolveSearchIntent } from "./fallback";
 
 export async function extractSearchIntent(query: string) 
 {

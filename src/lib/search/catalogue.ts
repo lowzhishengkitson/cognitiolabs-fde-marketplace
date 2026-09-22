@@ -1,5 +1,5 @@
 import type { Listing } from "@/data/listings";
-import type { SearchIntent } from "./search-intent";
+import type { SearchIntent } from "./intent/schema";
 
 function matchesHardConstraints(item: Listing, intent: SearchIntent): boolean 
 {

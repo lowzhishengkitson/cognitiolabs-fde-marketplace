@@ -1,7 +1,7 @@
 import type { Listing } from "@/data/listings";
-import { filterCatalogue } from "./search-catalogue";
-import type { SearchIntent } from "./search-intent";
-import { InvalidEmbeddingError } from "./embedding-errors";
+import { filterCatalogue } from "../catalogue";
+import type { SearchIntent } from "../intent/schema";
+import { InvalidEmbeddingError } from "./errors";
 
 export function listingToEmbeddingText(item: Listing): string 
 {

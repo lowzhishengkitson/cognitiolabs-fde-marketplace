@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getListing, listings } from "@/data/listings";
-import { formatPrice, formatStorage } from "@/lib/format";
+import { formatPrice, formatStorage } from "@/lib/listings/format";
 
 type Props = { params: Promise<{ id: string }> };
 export function generateStaticParams() { return listings.map(({ id }) => ({ id })); }

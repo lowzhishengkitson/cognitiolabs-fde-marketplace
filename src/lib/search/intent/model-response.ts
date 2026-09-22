@@ -1,4 +1,4 @@
-import { searchIntentSchema, type SearchIntent } from "./search-intent";
+import { searchIntentSchema, type SearchIntent } from "./schema";
 
 // Never use raw model content for catalogue results or client-facing errors.
 export function parseModelIntentResponse(payload: unknown): SearchIntent 

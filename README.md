@@ -61,14 +61,15 @@ The embedding integration has been tested with mocked vectors, but **a real Cogn
 | `src/app/page.tsx`, `src/components/marketplace-search.tsx` | Browse page and interactive search UI |
 | `src/app/listing/[id]/page.tsx` | Listing detail page |
 | `src/app/api/search/route.ts` | Request validation and search response |
-| `src/lib/local-intent.ts`, `src/lib/search-intent.ts` | Local constraint extraction and intent schema |
-| `src/lib/search-catalogue.ts` | Deterministic filtering and fallback ranking |
-| `src/lib/embedding-client.ts` | Server-only SDK client and embedding requests |
-| `src/lib/semantic-retrieval.ts` | Listing serialization, vector cache, cosine ranking |
-| `src/lib/search-service.ts` | Embedding-first search and local fallback |
+| `src/lib/search/intent/` | Intent schema, local parser, and inactive chat adapter |
+| `src/lib/search/catalogue.ts` | Deterministic filtering and fallback ranking |
+| `src/lib/search/retrieval/` | Server-only embedding client, listing serialization, vector cache, cosine ranking, and safe error categories |
+| `src/lib/search/service.ts` | Embedding-first search and local fallback |
+| `src/lib/listings/format.ts` | Listing price and storage display formatting |
+| `src/tests/search/` | Search and retrieval tests, separate from application code |
 | `src/app/notes/page.tsx` | Public assessment notes |
 
-An earlier experimental chat-based intent adapter remains in `src/lib/cognitio-gateway.ts` and related files. **The current `/api/search` route does not call it.** The optional `COGNITIO_*` entries in `.env.example` belong to that unused adapter; only `CLASSGW_KEY` is needed for active semantic search.
+An earlier experimental chat-based intent adapter remains in `src/lib/search/intent/gateway.ts` and related files. **The current `/api/search` route does not call it.** The optional `COGNITIO_*` entries in `.env.example` belong to that unused adapter; only `CLASSGW_KEY` is needed for active semantic search.
 
 ## Checks
 

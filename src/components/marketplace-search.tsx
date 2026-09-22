@@ -3,7 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { ListingCard } from "@/components/listing-card";
 import type { Listing } from "@/data/listings";
-import type { SearchIntent } from "@/lib/search-intent";
+import type { SearchIntent } from "@/lib/search/intent/schema";
 
 type SearchResponse = { interpretedIntent: SearchIntent; retrieval: "embedding" | "local-fallback"; fallbackReason?: string; listings: Listing[]; scores: { id: string; score: number }[] };
 

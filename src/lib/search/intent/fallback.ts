@@ -1,5 +1,5 @@
-import { parseLocally } from "./local-intent";
-import type { SearchIntent } from "./search-intent";
+import { parseLocally } from "./local";
+import type { SearchIntent } from "./schema";
 
 export type IntentSource = "llm" | "local-fallback";
 
