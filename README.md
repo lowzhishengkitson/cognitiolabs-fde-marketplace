@@ -33,7 +33,7 @@ Open http://localhost:3000. Check with `npm run lint`, `npm test` and `npm run b
 - `src/app/notes/page.tsx`: public project notes.
 - `src/app/layout.tsx` and `src/app/globals.css`: common navigation and Tailwind styles.
 
-The App Router reads local data directly. Prices and locations are illustrative Singapore-based seed data; images are placeholders. No database, embeddings or catalogue Q&A are included.
+The App Router reads local data directly. Prices and locations are illustrative Singapore-based seed data; images are placeholders. There is no database or catalogue Q&A.
 
 ## Search configuration
 
@@ -53,4 +53,4 @@ That earlier chat adapter has not been verified against the actual gateway. The 
 
 Catalogue embeddings are generated in one request, cached in memory as a shared in-flight promise and regenerated if listing text changes. Query embeddings are generated per search. Each serverless cold start may recreate the catalogue cache; vectors are not persisted or shared across instances.
 
-In development, submit a search and expand **Search details (development)** below the results. On a deployed build, inspect the `/api/search` response in browser developer tools to see `retrieval`, `interpretedIntent` and scores. A response marked `embedding` verifies that the embedding request returned vectors for that request; `local-fallback` does not. Test the deployed site with a real key before claiming gateway functionality.
+In development, submit a search and expand **Search details (development)** below the results. On a deployed build, inspect the `/api/search` response in browser developer tools to see `retrieval`, `interpretedIntent`, scores and (when applicable) a coarse `fallbackReason`. `missing-key` means `CLASSGW_KEY` was not loaded by the server; `gateway-auth` indicates a rejected credential; `gateway-network` indicates a connection or timeout problem. The reason never contains provider response text. A response marked `embedding` verifies that the embedding request returned vectors for that request; `local-fallback` does not. Restart the local server after changing `.env.local` and test the deployed site with a real key before claiming gateway functionality.

@@ -3,6 +3,7 @@ import test from "node:test";
 import { listings } from "../data/listings";
 import { searchWithFallback } from "./search-service";
 import { cosineSimilarity, createSemanticRetriever, listingToEmbeddingText, rankBySimilarity } from "./semantic-retrieval";
+import { classifyEmbeddingFailure, InvalidEmbeddingError, MissingEmbeddingKeyError } from "./embedding-errors";
 
 test("listing embedding text serializes only catalogue fields", () => {
   const item = listings[0];
@@ -47,12 +48,21 @@ test("retriever batches catalogue embeddings once, reuses cache and embeds each 
 
 test("failed embedding request falls back to deterministic local search", async () => {
   let failures = 0;
-  const result = await searchWithFallback("under $800 with at least 16GB RAM", listings, async () => { throw new Error("Mock embedding outage"); }, () => { failures += 1; });
+  const result = await searchWithFallback("under $800 with at least 16GB RAM", listings, async () => { throw new Error("Mock embedding outage"); }, () => { failures += 1; return "gateway-error"; });
   assert.equal(result.retrieval, "local-fallback");
   assert.equal(result.interpretedIntent.maxPrice, 800);
   assert.deepEqual(result.listings.map(({ id }) => id), ["envy-x360"]);
   assert.deepEqual(result.scores, []);
+  assert.equal(result.fallbackReason, "gateway-error");
   assert.equal(failures, 1);
+});
+
+test("fallback diagnostics classify failures without exposing provider text", () => {
+  assert.equal(classifyEmbeddingFailure(new MissingEmbeddingKeyError("secret")), "missing-key");
+  assert.equal(classifyEmbeddingFailure({ status: 401, message: "secret" }), "gateway-auth");
+  assert.equal(classifyEmbeddingFailure({ status: 429, message: "secret" }), "gateway-rate-limit");
+  assert.equal(classifyEmbeddingFailure({ name: "APIConnectionError", message: "secret" }), "gateway-network");
+  assert.equal(classifyEmbeddingFailure(new InvalidEmbeddingError("secret")), "invalid-embedding");
 });
 
 test("successful embedding retrieval reports safe scores", async () => {

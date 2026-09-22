@@ -1,6 +1,7 @@
 import type { Listing } from "@/data/listings";
 import { filterCatalogue } from "./search-catalogue";
 import type { SearchIntent } from "./search-intent";
+import { InvalidEmbeddingError } from "./embedding-errors";
 
 export function listingToEmbeddingText(item: Listing): string {
   return [
@@ -18,14 +19,14 @@ function validVector(vector: readonly number[]): boolean {
 }
 
 export function cosineSimilarity(a: readonly number[], b: readonly number[]): number {
-  if (a.length !== b.length || !validVector(a) || !validVector(b)) throw new Error("Invalid embedding vectors");
+  if (a.length !== b.length || !validVector(a) || !validVector(b)) throw new InvalidEmbeddingError("Invalid embedding vectors");
   let dot = 0, aNorm = 0, bNorm = 0;
   for (let index = 0; index < a.length; index++) {
     dot += a[index] * b[index];
     aNorm += a[index] ** 2;
     bNorm += b[index] ** 2;
   }
-  if (!aNorm || !bNorm) throw new Error("Zero-length embedding vector");
+  if (!aNorm || !bNorm) throw new InvalidEmbeddingError("Zero-length embedding vector");
   return dot / (Math.sqrt(aNorm) * Math.sqrt(bNorm));
 }
 
@@ -34,7 +35,7 @@ export type ScoredListing = { listing: Listing; score: number };
 export function rankBySimilarity(
   catalogue: readonly Listing[], vectors: readonly (readonly number[])[], queryVector: readonly number[], intent: SearchIntent,
 ): ScoredListing[] {
-  if (catalogue.length !== vectors.length) throw new Error("Catalogue and embedding count differ");
+  if (catalogue.length !== vectors.length) throw new InvalidEmbeddingError("Catalogue and embedding count differ");
   const scores = catalogue.map((listing, index) => ({ listing, index, score: cosineSimilarity(queryVector, vectors[index]) }));
   const eligible = new Set(filterCatalogue(catalogue, intent).map((item) => item.id));
   return scores.filter(({ listing }) => eligible.has(listing.id))
@@ -61,7 +62,7 @@ export function createSemanticRetriever(embedTexts: EmbedTexts) {
     }
     const vectorsPromise = cached.promise;
     const [vectors, queryVectors] = await Promise.all([vectorsPromise, embedTexts([query])]);
-    if (queryVectors.length !== 1) throw new Error("Expected one query embedding");
+    if (queryVectors.length !== 1) throw new InvalidEmbeddingError("Expected one query embedding");
     return rankBySimilarity(options.catalogue, vectors, queryVectors[0], options.intent);
   };
 }

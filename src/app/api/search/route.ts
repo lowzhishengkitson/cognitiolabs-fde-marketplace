@@ -2,6 +2,7 @@ import { z } from "zod";
 import { listings } from "@/data/listings";
 import { retrieveListings } from "@/lib/embedding-client";
 import { searchWithFallback } from "@/lib/search-service";
+import { classifyEmbeddingFailure } from "@/lib/embedding-errors";
 
 const requestSchema = z.strictObject({ query: z.string().trim().min(1).max(500) });
 
@@ -15,8 +16,12 @@ export async function POST(request: Request) {
   try {
     const result = await searchWithFallback(
       parsed.data.query, listings, retrieveListings,
-      // Avoid logging the query, credentials or provider response.
-      () => console.warn("Embedding retrieval failed; using local search."),
+      // Log only a coarse reason, never the query, credentials or provider response.
+      (error) => {
+        const reason = classifyEmbeddingFailure(error);
+        console.warn("Embedding retrieval failed; using local search:", reason);
+        return reason;
+      },
     );
     return Response.json(result);
   } catch {
