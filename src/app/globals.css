@@ -1,2 +1,6 @@
 @import "tailwindcss";
+
+html { scroll-behavior: smooth; }
 body { background: #f8fafc; color: #0f172a; }
+button, a, input { -webkit-tap-highlight-color: transparent; }
+::selection { background: #bfdbfe; color: #172554; }

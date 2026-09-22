@@ -3,20 +3,30 @@ import type { Listing } from "@/data/listings";
 import { formatPrice, formatStorage } from "@/lib/listings/format";
 
 export function ListingCard({ listing }: { listing: Listing }) {
-  return <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-    <div className="flex h-36 items-center justify-center bg-gradient-to-br from-slate-100 to-blue-100 text-6xl text-slate-500" aria-hidden="true">▱</div>
-    <div className="p-5">
-      <div className="flex justify-between gap-3 text-xs font-semibold uppercase tracking-wide text-blue-700"><span>{listing.brand}</span><span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">{listing.condition}</span></div>
-      <h2 className="mt-3 text-lg font-semibold"><Link className="hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-blue-700" href={`/listing/${listing.id}`}>{listing.title}</Link></h2>
-      <p className="mt-2 text-2xl font-bold">{formatPrice(listing.price)}</p>
-      <p className="mt-1 text-sm text-slate-500">{listing.sellerLocation}</p>
-      <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-sm">
-        <div><dt className="text-slate-500">CPU</dt><dd>{listing.cpu}</dd></div>
-        <div><dt className="text-slate-500">Memory</dt><dd>{listing.ramGB} GB RAM</dd></div>
-        <div><dt className="text-slate-500">Storage</dt><dd>{formatStorage(listing.storageGB)}</dd></div>
-        <div><dt className="text-slate-500">Weight</dt><dd>{listing.weightKg} kg</dd></div>
+  const href = `/listing/${listing.id}`;
+  return <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-600 focus-within:ring-offset-2">
+    <Link href={href} className="absolute inset-0 z-10 rounded-2xl focus:outline-none" aria-label={`View ${listing.title}`}><span className="sr-only">View details</span></Link>
+    <div className="flex h-36 items-center justify-center border-b border-slate-100 bg-slate-100 text-slate-400" aria-hidden="true">
+      <svg viewBox="0 0 96 64" className="h-16 w-24" fill="none"><rect x="15" y="7" width="66" height="43" rx="4" stroke="currentColor" strokeWidth="3"/><path d="M7 53h82l-5 5H12l-5-5Z" fill="currentColor"/><path d="M21 13h54v31H21z" fill="#dbeafe"/></svg>
+    </div>
+    <div className="flex flex-1 flex-col p-4 sm:p-5">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <p className="truncate text-xs font-bold uppercase tracking-[0.12em] text-blue-700">{listing.brand}</p>
+        <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700">{listing.condition}</span>
+      </div>
+      <h3 className="mt-3 text-lg font-bold leading-snug text-slate-950 transition group-hover:text-blue-800">{listing.title}</h3>
+      <p className="mt-3 text-2xl font-extrabold tracking-tight text-slate-950">{formatPrice(listing.price)}</p>
+      <p className="mt-1 flex items-start gap-1.5 text-sm text-slate-500"><svg viewBox="0 0 20 20" className="mt-0.5 h-4 w-4 shrink-0" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M10 18s6-5.1 6-11A6 6 0 1 0 4 7c0 5.9 6 11 6 11Zm0-8.5A2.5 2.5 0 1 0 10 4a2.5 2.5 0 0 0 0 5.5Z" clipRule="evenodd"/></svg><span>{listing.sellerLocation}</span></p>
+      <dl className="mt-4 grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 text-sm">
+        <div><dt className="text-xs text-slate-500">RAM</dt><dd className="mt-0.5 font-bold text-slate-800">{listing.ramGB}GB</dd></div>
+        <div><dt className="text-xs text-slate-500">Storage</dt><dd className="mt-0.5 font-bold text-slate-800">{formatStorage(listing.storageGB)}</dd></div>
+        <div><dt className="text-xs text-slate-500">Weight</dt><dd className="mt-0.5 font-bold text-slate-800">{listing.weightKg}kg</dd></div>
       </dl>
-      <Link className="mt-5 inline-block text-sm font-semibold text-blue-700 hover:underline" href={`/listing/${listing.id}`}>View details →</Link>
+      <div className="mt-3 min-w-0 rounded-lg bg-slate-50 px-3 py-2.5">
+        <p className="text-xs font-medium text-slate-500">Processor</p>
+        <p className="mt-0.5 text-sm font-semibold leading-5 text-slate-800">{listing.cpu}</p>
+      </div>
+      <span className="mt-auto flex items-center gap-1 pt-4 text-sm font-bold text-blue-700" aria-hidden="true">View details <span className="transition-transform group-hover:translate-x-0.5">→</span></span>
     </div>
   </article>;
 }

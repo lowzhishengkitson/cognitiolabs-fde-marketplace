@@ -42,13 +42,13 @@ const sections = [
 ];
 
 export default function NotesPage() {
-  return <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">
-    <p className="text-sm font-semibold uppercase tracking-widest text-blue-700">Public documentation</p>
-    <h1 className="mt-3 text-4xl font-bold tracking-tight">Project notes</h1>
-    <p className="mt-4 leading-7 text-slate-600">What I built, how search works, and what remains to be done.</p>
+  return <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
+    <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-700 sm:text-sm">Public documentation</p>
+    <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Project notes</h1>
+    <p className="mt-3 max-w-2xl leading-7 text-slate-600">What I built, how search and catalogue Q&A work, and what remains outside this demo.</p>
     <div className="mt-8 space-y-4">
-      {sections.map((section) => <section key={section.title} className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-        <h2 className="text-xl font-semibold">{section.title}</h2>
+      {sections.map((section) => <section key={section.title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <h2 className="text-xl font-bold text-slate-950">{section.title}</h2>
         <div className="mt-3 space-y-3 leading-7 text-slate-600">{section.points.map((point) => <p key={point}>{point}</p>)}</div>
       </section>)}
     </div>
