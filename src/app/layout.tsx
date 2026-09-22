@@ -1,0 +1,16 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import "./globals.css";
+
+export const metadata: Metadata = { title: "Second Loop | Pre-owned laptops", description: "Browse sample second-hand laptops." };
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <html lang="en"><body className="min-h-screen antialiased">
+    <header className="border-b border-slate-200 bg-white"><nav aria-label="Main navigation" className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+      <Link href="/" className="text-lg font-extrabold tracking-tight">second<span className="text-blue-700">loop</span><span className="sr-only"> home</span></Link>
+      <Link href="/notes" className="rounded px-3 py-2 text-sm font-medium hover:bg-slate-100">Project notes</Link>
+    </nav></header>
+    {children}
+    <footer className="mt-16 border-t border-slate-200 bg-white px-4 py-7 text-center text-sm text-slate-500">Assessment prototype · Sample listings only</footer>
+  </body></html>;
+}
