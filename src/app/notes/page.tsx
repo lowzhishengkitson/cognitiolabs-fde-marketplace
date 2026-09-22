@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Project notes | Second Loop" };
 const sections = [
-  { title: "What I built and who it is for", text: "A mobile-friendly marketplace for people comparing pre-owned laptops. Natural-language search extracts intent with an LLM when configured, then filters and ranks listings in deterministic TypeScript." },
-  { title: "Seeded/simulated features", text: "Six local TypeScript listings are simulated. Prices, condition, battery health and seller locations are illustrative. Without model configuration, a limited local parser handles common search phrases." },
-  { title: "AI coding tools and models", text: "This prototype was developed with Codex. The search model and provider can be configured through server environment variables; no Cognitio gateway details have been supplied yet. Document the final provider and model here when configured." },
+  { title: "What I built and who it is for", text: "A mobile-friendly marketplace for people comparing pre-owned laptops. Search is designed to use a model to interpret the query as structured intent, validate that intent, then filter and rank with deterministic TypeScript. A limited local parser remains the fallback." },
+  { title: "Seeded/simulated features", text: "Six local TypeScript listings are seeded. Prices, condition, battery health and seller locations are illustrative. The search model integration has not yet been verified against a live Cognitio gateway response." },
+  { title: "AI coding tools and models", text: "This prototype was developed with Codex. A specific search model has not yet been verified; server-side Cognitio configuration requires the candidate gateway documentation and credentials. Structured model output is validated before use. The API response reports whether the LLM or local fallback parsed the query." },
   { title: "Features intentionally not built", text: "Embeddings and vector search are not used. Authentication, payments, messaging and database integration are outside this version." },
-  { title: "Known issues and unfinished work", text: "Catalogue Q&A is unfinished. Local intent extraction recognizes only common phrases and may miss nuanced requests. Listing images are placeholders, and there is no seller contact or transaction flow." },
+  { title: "Known issues and unfinished work", text: "Catalogue Q&A is unfinished. The unverified gateway adapter assumes an OpenAI-compatible chat endpoint; its request and response must be checked against the candidate console. The local parser recognizes only common phrases and may miss nuanced requests. Images are placeholders." },
 ];
 export default function NotesPage() {
   return <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-14">

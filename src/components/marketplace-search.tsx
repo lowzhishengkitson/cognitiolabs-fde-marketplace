@@ -5,7 +5,7 @@ import { ListingCard } from "@/components/listing-card";
 import type { Listing } from "@/data/listings";
 import type { SearchIntent } from "@/lib/search-intent";
 
-type SearchResponse = { intent: SearchIntent; source: "model" | "local"; listings: Listing[] };
+type SearchResponse = { interpretedIntent: SearchIntent; parser: "llm" | "local-fallback"; listings: Listing[] };
 
 export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
   const [query, setQuery] = useState("");
@@ -53,14 +53,15 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
         <input id="catalogue-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} maxLength={500} placeholder="Lightweight, under $800, at least 16GB RAM…" className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base focus-visible:outline-2 focus-visible:outline-blue-700" />
         <button type="submit" disabled={loading || !query.trim()} className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">{loading ? "Searching…" : "Search"}</button>
       </div>
-      <p className="mt-2 text-xs text-slate-500">Search uses local keyword extraction until a model is configured. Results come from the six sample listings.</p>
+      <p className="mt-2 text-xs text-slate-500">Results come from the six sample listings.</p>
     </form>
     {error && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
     <section className="mt-10" aria-labelledby="listings-heading" aria-busy={loading}>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <div><h2 id="listings-heading" className="text-2xl font-bold">{results ? "Search results" : "Available laptops"}</h2>{activeQuery && <p className="mt-1 text-sm text-slate-500">For “{activeQuery}” · {results?.source === "local" ? "basic local interpretation" : "model interpretation"}</p>}</div>
+        <div><h2 id="listings-heading" className="text-2xl font-bold">{results ? "Search results" : "Available laptops"}</h2>{activeQuery && <p className="mt-1 text-sm text-slate-500">For “{activeQuery}”</p>}</div>
         <div className="flex items-center gap-3"><p className="text-sm text-slate-500">{displayed.length} {results ? "matches" : "sample listings"}</p>{(results || loading) && <button type="button" onClick={clear} className="text-sm font-semibold text-blue-700 hover:underline">Clear search</button>}</div>
       </div>
+      {process.env.NODE_ENV === "development" && results && <details className="mb-5 rounded-lg border border-slate-200 bg-white p-3 text-sm"><summary className="cursor-pointer font-medium">Search interpretation (development)</summary><p className="mt-2">Parser: {results.parser}</p><pre className="mt-2 overflow-x-auto text-xs">{JSON.stringify(results.interpretedIntent, null, 2)}</pre></details>}
       {displayed.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{displayed.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div> : <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center"><h3 className="text-lg font-semibold">No laptops match those constraints</h3><p className="mt-2 text-slate-600">Try a higher budget or fewer requirements.</p><button onClick={clear} className="mt-4 font-semibold text-blue-700 hover:underline">Show all laptops</button></div>}
     </section>
   </>;

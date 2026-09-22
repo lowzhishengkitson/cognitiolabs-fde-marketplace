@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { listings } from "@/data/listings";
 import { searchCatalogue } from "@/lib/search-catalogue";
-import { extractSearchIntent, IntentExtractionError } from "@/lib/search-intent-server";
+import { extractSearchIntent } from "@/lib/search-intent-server";
 
 const requestSchema = z.strictObject({ query: z.string().trim().min(1).max(500) });
 
@@ -14,9 +14,8 @@ export async function POST(request: Request) {
 
   try {
     const { intent, source } = await extractSearchIntent(parsed.data.query);
-    return Response.json({ intent, source, listings: searchCatalogue(listings, intent) });
-  } catch (error) {
-    if (error instanceof IntentExtractionError) return Response.json({ error: error.message }, { status: 502 });
-    return Response.json({ error: "Search could not be completed." }, { status: 500 });
+    return Response.json({ interpretedIntent: intent, parser: source, listings: searchCatalogue(listings, intent) });
+  } catch {
+    return Response.json({ error: "Search could not be interpreted. Try a simpler query." }, { status: 422 });
   }
 }

@@ -1,13 +1,14 @@
 import { z } from "zod";
 
-const positiveAmount = z.number().finite().nonnegative();
+const price = z.number().finite().nonnegative().max(1_000_000);
+const capacity = z.number().finite().int().positive().max(16_000);
 
 export const searchIntentSchema = z.strictObject({
-  minPrice: positiveAmount.optional(),
-  maxPrice: positiveAmount.optional(),
-  minRamGB: positiveAmount.optional(),
-  minStorageGB: positiveAmount.optional(),
-  maxWeightKg: positiveAmount.optional(),
+  minPrice: price.optional(),
+  maxPrice: price.optional(),
+  minRamGB: capacity.max(128).optional(),
+  minStorageGB: capacity.optional(),
+  maxWeightKg: z.number().finite().positive().max(20).optional(),
   brand: z.string().trim().min(1).max(60).optional(),
   condition: z.enum(["Like new", "Good", "Fair"]).optional(),
   useCase: z.string().trim().min(1).max(80).optional(),
