@@ -1,17 +1,13 @@
 import type { Listing } from "@/data/listings";
 import type { SearchIntent } from "./intent/schema";
 import { sortListings } from "./sort";
+import { matchesComponentQuery } from "./components";
 
 function matchesHardConstraints(item: Listing, intent: SearchIntent): boolean 
 {
   const exclusive = new Set(intent.exclusiveBounds ?? []);
   const minimum = (field: Parameters<typeof exclusive.has>[0], actual: number, expected: number | undefined) => expected === undefined || (exclusive.has(field) ? actual > expected : actual >= expected);
   const maximum = (field: Parameters<typeof exclusive.has>[0], actual: number, expected: number | undefined) => expected === undefined || (exclusive.has(field) ? actual < expected : actual <= expected);
-  const component = (actual: string, expected: string | undefined) => {
-    if (!expected) return true;
-    const normalize = (value: string) => value.toLowerCase().replace(/\b(?:core|processor|cpu|gpu|nvidia|geforce|amd)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
-    return ` ${normalize(actual)} `.includes(` ${normalize(expected)} `);
-  };
   return minimum("minPrice", item.price, intent.minPrice)
     && maximum("maxPrice", item.price, intent.maxPrice)
     && minimum("minRamGB", item.ramGB, intent.minRamGB)
@@ -26,8 +22,8 @@ function matchesHardConstraints(item: Listing, intent: SearchIntent): boolean
     && maximum("maxBatteryHealth", item.batteryHealth, intent.maxBatteryHealth)
     && (intent.brand === undefined || item.brand.toLowerCase() === intent.brand.toLowerCase())
     && (intent.condition === undefined || item.condition === intent.condition)
-    && component(item.cpu, intent.cpuQuery)
-    && component(item.gpu, intent.gpuQuery);
+    && matchesComponentQuery(item.cpu, intent.cpuQuery, "cpu")
+    && matchesComponentQuery(item.gpu, intent.gpuQuery, "gpu");
 }
 
 export function filterCatalogue(catalogue: readonly Listing[], intent: SearchIntent): Listing[] 

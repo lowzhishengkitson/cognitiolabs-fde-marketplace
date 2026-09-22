@@ -160,3 +160,19 @@ test("screen constraints remain authoritative through semantic retrieval", async
   assert.ok(result.listings.length > 0);
   assert.ok(result.listings.every((item) => item.screenSizeInches >= 15));
 });
+
+test("embedding and fallback paths enforce identical partial component eligibility", async () => {
+  const retrieve = createSemanticRetriever(async (texts) => texts.map((_text, index) => [index + 1, 1]));
+  for (const query of ["RTX laptops", "NVIDIA GPU laptops", "Radeon laptops", "Intel CPU laptops", "i7 laptops", "Ryzen 7 laptops"]) {
+    const semantic = await searchWithFallback(query, listings, retrieve, () => assert.fail("Unexpected fallback"));
+    const fallback = await searchWithFallback(query, listings, async () => { throw Error("offline"); }, () => "gateway-error");
+    assert.deepEqual(new Set(semantic.listings.map((item) => item.id)), new Set(fallback.listings.map((item) => item.id)), query);
+  }
+});
+
+test("partial component constraints remain hard filters in compound semantic queries", async () => {
+  const retrieve = createSemanticRetriever(async (texts) => texts.map((_text, index) => [index + 1, 1]));
+  const result = await searchWithFallback("RTX under 1.8kg, cheapest first", listings, retrieve, () => assert.fail("Unexpected fallback"));
+  assert.ok(result.listings.every((item) => /\brtx\b/i.test(item.gpu) && item.weightKg < 1.8));
+  assert.deepEqual(result.listings.map((item) => item.price), [...result.listings.map((item) => item.price)].sort((a, b) => a - b));
+});

@@ -205,6 +205,41 @@ test("named CPU and GPU requirements are preserved without inventing qualitative
   assert.equal(parseLocally("fast processor").cpuQuery, undefined);
 });
 
+test("partial CPU and GPU families use the correct structured field", () => {
+  for (const [query, field, expected] of [
+    ["RTX laptops", "gpuQuery", "RTX"], ["NVIDIA laptops", "gpuQuery", "NVIDIA"],
+    ["NVIDIA GPU laptops", "gpuQuery", "NVIDIA"], ["GeForce laptops", "gpuQuery", "GeForce"],
+    ["GTX laptops", "gpuQuery", "GTX"], ["Radeon laptops", "gpuQuery", "Radeon"],
+    ["AMD GPU laptops", "gpuQuery", "AMD"], ["Intel Arc laptops", "gpuQuery", "Intel Arc"],
+    ["Intel CPU laptops", "cpuQuery", "Intel"], ["Intel processor", "cpuQuery", "Intel"],
+    ["Core i7 laptops", "cpuQuery", "Core i7"], ["i7 laptops", "cpuQuery", "i7"],
+    ["AMD CPU laptops", "cpuQuery", "AMD"], ["Ryzen laptops", "cpuQuery", "Ryzen"],
+    ["Ryzen 7 laptops", "cpuQuery", "Ryzen 7"], ["Apple M2 laptops", "cpuQuery", "Apple M2"],
+  ] as const) assert.equal(parseLocally(query)[field], expected, query);
+
+  const ambiguous = parseLocally("AMD laptop");
+  assert.equal(ambiguous.cpuQuery, undefined);
+  assert.equal(ambiguous.gpuQuery, undefined);
+  assert.equal(parseLocally("Intel GPU laptops").cpuQuery, undefined);
+  assert.equal(parseLocally("Intel GPU laptops").gpuQuery, "Intel");
+});
+
+test("partial component filters combine with numeric filters and ordering", () => {
+  const rtx = parseLocally("RTX laptop under $1200");
+  assert.equal(rtx.gpuQuery, "RTX");
+  assert.equal(rtx.maxPrice, 1200);
+  const intel = parseLocally("Intel CPU with at least 16GB RAM");
+  assert.equal(intel.cpuQuery, "Intel");
+  assert.equal(intel.minRamGB, 16);
+  const ryzen = parseLocally("Ryzen laptop with largest screen");
+  assert.equal(ryzen.cpuQuery, "Ryzen");
+  assert.deepEqual(ryzen.sort, { field: "screenSizeInches", direction: "desc" });
+  const portable = parseLocally("RTX under 1.8kg, cheapest first");
+  assert.equal(portable.gpuQuery, "RTX");
+  assert.equal(portable.maxWeightKg, 1.8);
+  assert.deepEqual(portable.sort, { field: "price", direction: "asc" });
+});
+
 test("combined component, numeric, and ordering queries retain every instruction", () => {
   const gpu = parseLocally("RTX 4060 under $1200, cheapest first");
   assert.equal(gpu.gpuQuery, "RTX 4060");

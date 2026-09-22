@@ -54,9 +54,11 @@ function unqualifiedScreenBound(text: string): Bound | undefined {
 }
 
 function componentQueries(query: string): Pick<SearchIntent, "cpuQuery" | "gpuQuery"> {
-  const gpu = query.match(/\b(?:(?:nvidia\s+)?(?:geforce\s+)?(?:rtx|gtx)\s*[a-z]?\d{3,4}(?:\s*ti)?|(?:amd\s+)?radeon\s+rx\s*\d{3,4}[a-z]*|intel\s+arc\s+a\d{3,4})\b/i)?.[0];
-  const cpu = query.match(/\b(?:intel\s+(?:core\s+)?i[3579](?:[- ]?\d{4,5}[a-z]{0,2})?|(?:amd\s+)?ryzen\s+[3579](?:\s+pro)?(?:\s+\d{4}[a-z]{0,2})?|apple\s+m[1-9](?:\s+(?:pro|max|ultra))?)\b/i)?.[0];
-  return { cpuQuery: cpu, gpuQuery: gpu };
+  const gpuSpecific = query.match(/\b(?:(?:nvidia\s+)?(?:geforce\s+)?(?:rtx|gtx)\s*[a-z]?\d{3,4}(?:\s*ti)?|(?:amd\s+)?radeon\s+rx\s*\d{3,4}[a-z]*|intel\s+arc\s+a\d{3,4})\b/i)?.[0];
+  const gpuFamily = query.match(/\b(?:intel\s+arc|nvidia(?=\s+(?:gpu|graphics|laptops?))|geforce|rtx|gtx|radeon|amd(?=\s+(?:gpu|graphics))|intel(?=\s+(?:gpu|graphics)))\b/i)?.[0];
+  const cpuSpecific = query.match(/\b(?:intel\s+(?:core\s+)?i[3579](?:[- ]?\d{4,5}[a-z]{0,2})?|(?:core\s+)?i[3579](?:[- ]?\d{4,5}[a-z]{0,2})?|(?:amd\s+)?ryzen(?:\s+[3579](?:\s+pro)?(?:\s+\d{4}[a-z]{0,2})?)?|apple\s+m[1-9](?:\s+(?:pro|max|ultra))?)\b/i)?.[0];
+  const cpuVendor = query.match(/\b(?:intel(?=\s+(?:cpu|processor))|amd(?=\s+(?:cpu|processor)))\b/i)?.[0];
+  return { cpuQuery: cpuSpecific ?? cpuVendor, gpuQuery: gpuSpecific ?? gpuFamily };
 }
 
 // Deterministic fallback for common explicit catalogue constraints and sorts.
