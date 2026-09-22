@@ -51,7 +51,8 @@ test("failed embedding request falls back to deterministic local search", async 
   const result = await searchWithFallback("under $800 with at least 16GB RAM", listings, async () => { throw new Error("Mock embedding outage"); }, () => { failures += 1; return "gateway-error"; });
   assert.equal(result.retrieval, "local-fallback");
   assert.equal(result.interpretedIntent.maxPrice, 800);
-  assert.deepEqual(result.listings.map(({ id }) => id), ["envy-x360"]);
+  assert.ok(result.listings.some(({ id }) => id === "envy-x360"));
+  assert.ok(result.listings.every((item) => item.price <= 800 && item.ramGB >= 16));
   assert.deepEqual(result.scores, []);
   assert.equal(result.fallbackReason, "gateway-error");
   assert.equal(failures, 1);

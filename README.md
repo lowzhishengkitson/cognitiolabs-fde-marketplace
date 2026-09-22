@@ -1,6 +1,6 @@
 # Second Loop
 
-Second Loop is a mobile-friendly, second-hand laptop marketplace demo built for the CognitioLabs Associate Forward Deployed Engineer assessment. Buyers can browse six seeded listings, open a laptop's details, and describe what they need in everyday language. The public `/notes` page explains the demo's scope and unfinished work.
+Second Loop is a mobile-friendly, second-hand laptop marketplace demo built for the CognitioLabs Associate Forward Deployed Engineer assessment. Buyers can browse 50 seeded listings, open a laptop's details, and describe what they need in everyday language. The public `/notes` page explains the demo's scope and unfinished work.
 
 The app uses **Next.js App Router, TypeScript, Tailwind CSS, Zod, and the official OpenAI JavaScript SDK**. Listings are stored in local TypeScript data. There is no database or account system.
 
@@ -43,7 +43,7 @@ The SDK is configured for the CognitioLabs-provided OpenRouter-compatible base U
 4. Deterministic TypeScript filtering removes listings that violate explicit constraints. Cosine similarity ranks the remaining listings by semantic relevance. The model never chooses listing IDs or changes listing facts.
 5. If embedding retrieval fails or the key is absent, the existing local search ranks and filters the same seeded catalogue. In this fallback, a vague query may yield the full catalogue because the phrase parser recognizes only a limited set of terms.
 
-The six catalogue embeddings are requested together and cached in the server process. Concurrent searches share the same in-flight catalogue request. Each query gets a new embedding. A changed catalogue regenerates the cache; a serverless cold start or another server instance may do so as well. Vectors are not persisted.
+The 50 catalogue embeddings are requested together and cached in the server process. Concurrent searches share the same in-flight catalogue request. Each query gets a new embedding. A changed catalogue regenerates the cache; a serverless cold start or another server instance may do so as well. Vectors are not persisted.
 
 The response includes `listings`, `interpretedIntent`, `retrieval` (`embedding` or `local-fallback`), and scores for embedding results. A fallback also includes a coarse `fallbackReason`, such as `missing-key`, `gateway-auth`, or `gateway-network`. No key, authorization header, or provider response text is returned.
 
@@ -57,7 +57,7 @@ The embedding integration has been tested with mocked vectors, but **a real Cogn
 
 | Path | Responsibility |
 | --- | --- |
-| `src/data/listings.ts` | Listing type and six seeded laptops |
+| `src/data/listings.ts` | Listing type and 50 seeded laptops |
 | `src/app/page.tsx`, `src/components/marketplace-search.tsx` | Browse page and interactive search UI |
 | `src/app/listing/[id]/page.tsx` | Listing detail page |
 | `src/app/api/search/route.ts` | Request validation and search response |

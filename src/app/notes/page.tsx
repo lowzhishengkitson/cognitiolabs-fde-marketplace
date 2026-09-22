@@ -13,7 +13,7 @@ const sections = [
   {
     title: "Seeded and simulated features",
     points: [
-      "The six laptops, prices, condition descriptions, battery health figures, and seller locations are illustrative local TypeScript data. There are no real sellers or transactions, and the laptop artwork is a placeholder.",
+      "The 50 laptops, prices, condition descriptions, battery health figures, and seller locations are illustrative local TypeScript data. There are no real sellers or transactions, and the laptop artwork is a placeholder.",
       "Catalogue embeddings are cached in memory per server process. A serverless cold start or another instance may generate them again; no vectors or listings are stored in a database.",
     ],
   },

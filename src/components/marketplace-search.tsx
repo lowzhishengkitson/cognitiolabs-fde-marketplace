@@ -53,7 +53,7 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
         <input id="catalogue-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} maxLength={500} placeholder="Lightweight, under $800, at least 16GB RAM…" className="min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-base focus-visible:outline-2 focus-visible:outline-blue-700" />
         <button type="submit" disabled={loading || !query.trim()} className="rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50">{loading ? "Searching…" : "Search"}</button>
       </div>
-      <p className="mt-2 text-xs text-slate-500">Results come from the six sample listings.</p>
+      <p className="mt-2 text-xs text-slate-500">Results come from the 50 sample listings.</p>
     </form>
     {error && <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p>}
     <section className="mt-10" aria-labelledby="listings-heading" aria-busy={loading}>
