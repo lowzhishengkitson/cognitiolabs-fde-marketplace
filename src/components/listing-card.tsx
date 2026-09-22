@@ -3,7 +3,7 @@ import type { Listing } from "@/data/listings";
 import { formatPrice, formatStorage } from "@/lib/listings/format";
 import { ListingImage } from "@/components/listing-image";
 
-export function ListingCard({ listing }: { listing: Listing }) {
+export function ListingCard({ listing, matchReasons }: { listing: Listing; matchReasons?: string[] }) {
   const href = `/listing/${listing.id}`;
   return <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-600 focus-within:ring-offset-2">
     <div className="relative border-b border-slate-100">
@@ -24,6 +24,15 @@ export function ListingCard({ listing }: { listing: Listing }) {
         <p className="text-xs font-medium text-slate-500">Processor</p>
         <p className="mt-0.5 text-sm font-semibold leading-5 text-slate-800">{listing.cpu}</p>
       </div>
+      {matchReasons && matchReasons.length > 0 && <div className="mt-3 border-t border-slate-100 pt-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Why this matched</p>
+        <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-700">
+          {matchReasons.slice(0, 3).map((reason) => {
+            const semantic = /^(?:Relevant to|[\d.]+kg supports)/.test(reason);
+            return <li key={reason} className="flex gap-2"><span className={semantic ? "text-amber-600" : "text-emerald-700"} aria-hidden="true">{semantic ? "≈" : "✓"}</span><span><span className="sr-only">{semantic ? "Preference relevance: " : "Matched requirement: "}</span>{reason}</span></li>;
+          })}
+        </ul>
+      </div>}
       <span className="mt-auto flex items-center gap-1 pt-4 text-sm font-bold text-blue-700" aria-hidden="true">View details <span className="transition-transform group-hover:translate-x-0.5">→</span></span>
     </div>
   </article>;

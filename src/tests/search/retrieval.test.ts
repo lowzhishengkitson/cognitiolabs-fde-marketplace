@@ -54,6 +54,7 @@ test("failed embedding request falls back to deterministic local search", async 
   assert.ok(result.listings.some(({ id }) => id === "envy-x360"));
   assert.ok(result.listings.every((item) => item.price <= 800 && item.ramGB >= 16));
   assert.deepEqual(result.scores, []);
+  assert.deepEqual(result.matchReasons["envy-x360"], ["16GB RAM meets your 16GB minimum", "Within your S$800 budget"]);
   assert.equal(result.fallbackReason, "gateway-error");
   assert.equal(failures, 1);
 });
@@ -72,6 +73,7 @@ test("successful embedding retrieval reports safe scores", async () => {
   assert.equal(result.retrieval, "embedding");
   assert.equal(result.listings[0].id, "rog-g14");
   assert.deepEqual(result.scores.map(({ id }) => id), result.listings.map(({ id }) => id));
+  assert.deepEqual(result.matchReasons[result.listings[0].id], ["Relevant to your gaming search"]);
 });
 
 test("hard filters and explicit sorting override semantic scores", async () => {

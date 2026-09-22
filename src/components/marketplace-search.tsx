@@ -5,7 +5,7 @@ import { ListingCard } from "@/components/listing-card";
 import type { Listing } from "@/data/listings";
 import type { SearchIntent } from "@/lib/search/intent/schema";
 
-type SearchResponse = { interpretedIntent: SearchIntent; retrieval: "embedding" | "local-fallback"; fallbackReason?: string; listings: Listing[]; scores: { id: string; score: number }[] };
+type SearchResponse = { interpretedIntent: SearchIntent; retrieval: "embedding" | "local-fallback"; fallbackReason?: string; listings: Listing[]; matchReasons: Record<string, string[]>; scores: { id: string; score: number }[] };
 
 const suggestions = [
   "Under $700 for university",
@@ -39,11 +39,21 @@ function intentLabels(intent: SearchIntent): string[] {
   if (intent.gpuQuery) labels.push(`GPU: ${intent.gpuQuery}`);
   if (intent.useCase) labels.push(`Use: ${titleCase(intent.useCase)}`);
   for (const preference of intent.preferences ?? []) labels.push(titleCase(preference));
-  if (intent.sort) {
-    const fields = { price: "Price", weightKg: "Weight", ramGB: "RAM", storageGB: "Storage", screenSizeInches: "Screen", batteryHealth: "Battery health" };
-    labels.push(`Sort: ${fields[intent.sort.field]} ${intent.sort.direction === "asc" ? "↑" : "↓"}`);
-  }
   return [...new Set(labels)];
+}
+
+function sortDescription(intent: SearchIntent): string | undefined {
+  if (!intent.sort) return undefined;
+  const directions = {
+    price: intent.sort.direction === "asc" ? "low to high" : "high to low",
+    weightKg: intent.sort.direction === "asc" ? "light to heavy" : "heavy to light",
+    ramGB: intent.sort.direction === "asc" ? "low to high" : "high to low",
+    storageGB: intent.sort.direction === "asc" ? "low to high" : "high to low",
+    screenSizeInches: intent.sort.direction === "asc" ? "small to large" : "large to small",
+    batteryHealth: intent.sort.direction === "asc" ? "low to high" : "high to low",
+  };
+  const fields = { price: "price", weightKg: "weight", ramGB: "RAM", storageGB: "storage", screenSizeInches: "screen size", batteryHealth: "battery health" };
+  return `Sorted by ${fields[intent.sort.field]}: ${directions[intent.sort.field]}`;
 }
 
 export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
@@ -101,6 +111,7 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
 
   const displayed = results?.listings ?? catalogue;
   const labels = results ? intentLabels(results.interpretedIntent) : [];
+  const ordering = results ? sortDescription(results.interpretedIntent) : undefined;
 
   return <div className="mt-7 sm:mt-9">
     <section aria-labelledby="search-heading" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
@@ -138,6 +149,7 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
             {results ? `${displayed.length} ${displayed.length === 1 ? "laptop matches" : "laptops match"} your search` : "Browse all laptops"}
           </h2>
           <p className="mt-1 text-sm text-slate-600">{activeQuery ? <>Results for “<span className="font-medium text-slate-800">{activeQuery}</span>”</> : `${catalogue.length} pre-owned sample listings`}</p>
+          {ordering && <p className="mt-1 text-sm font-semibold text-blue-800">{ordering}</p>}
         </div>
         {results && <button type="button" onClick={clear} className="min-h-10 w-fit rounded-lg px-1 text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 hover:decoration-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700">Clear search</button>}
       </div>
@@ -150,7 +162,7 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
       {process.env.NODE_ENV === "development" && results && <details className="mb-5 rounded-xl border border-slate-200 bg-white p-3 text-sm"><summary className="cursor-pointer font-medium">Search details (development)</summary><p className="mt-2">Retrieval: {results.retrieval}</p>{results.fallbackReason && <p className="mt-1">Fallback reason: {results.fallbackReason}</p>}<pre className="mt-2 max-w-full overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify({ interpretedIntent: results.interpretedIntent, scores: results.scores }, null, 2)}</pre></details>}
 
       {displayed.length
-        ? <div className={`grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-70" : ""}`}>{displayed.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div>
+        ? <div className={`grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-70" : ""}`}>{displayed.map((listing) => <ListingCard key={listing.id} listing={listing} matchReasons={results?.matchReasons[listing.id]} />)}</div>
         : <div className="rounded-2xl border border-slate-200 bg-white px-5 py-12 text-center shadow-sm"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-xl" aria-hidden="true">⌕</div><h3 className="mt-4 text-lg font-bold">No laptops match those requirements.</h3><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">Try removing a constraint, raising your budget, or returning to the full catalogue.</p><div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row"><button type="button" onClick={simplify} className="min-h-11 rounded-xl border border-slate-300 bg-white px-5 font-semibold hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Try fewer requirements</button><button type="button" onClick={clear} className="min-h-11 rounded-xl bg-blue-700 px-5 font-semibold text-white hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">Clear search</button></div></div>}
     </section>
   </div>;
