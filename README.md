@@ -1,56 +1,81 @@
 # Second Loop
 
-A mobile-first second-hand laptop marketplace prototype for the CognitioLabs Associate FDE assessment.
+Second Loop is a mobile-friendly, second-hand laptop marketplace demo built for the CognitioLabs Associate Forward Deployed Engineer assessment. Buyers can browse six seeded listings, open a laptop's details, and describe what they need in everyday language. The public `/notes` page explains the demo's scope and unfinished work.
 
-## Run
+The app uses **Next.js App Router, TypeScript, Tailwind CSS, Zod, and the official OpenAI JavaScript SDK**. Listings are stored in local TypeScript data. There is no database or account system.
 
-Node.js 20 or newer:
+## What you can do
+
+- Browse cards showing price, CPU, RAM, storage, condition, and weight.
+- Open `/listing/[id]` for the full specifications, description, and seller location.
+- Search with phrases such as `something portable for university programming` or `under $800 with at least 16GB RAM`.
+- Read `/notes` without signing in.
+
+All listing prices and seller details are illustrative. Laptop artwork is a placeholder. Payments, messaging, authentication, and catalogue Q&A are not implemented.
+
+## Run locally
+
+Use Node.js 20 or newer:
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-Open http://localhost:3000. Check with `npm run lint`, `npm test` and `npm run build`.
+Open [http://localhost:3000](http://localhost:3000). On Windows PowerShell, copy `.env.example` to `.env.local` with `Copy-Item .env.example .env.local`. If PowerShell blocks `npm.ps1`, run `npm.cmd` in place of `npm`.
 
-## Architecture
+Search works without a key through the limited local parser. To try semantic retrieval, set this variable in `.env.local` and restart the development server:
 
-- `src/data/listings.ts`: Listing type, six simulated listings and ID lookup.
-- `src/lib/format.ts`: SGD and storage display formatting.
-- `src/components/listing-card.tsx`: browse card.
-- `src/app/page.tsx` and `src/components/marketplace-search.tsx`: catalogue browsing and interactive search.
-- `src/app/api/search/route.ts`: validated search request and response.
-- `src/lib/search-intent-server.ts`: server-only model-first intent orchestration with local fallback.
-- `src/lib/cognitio-gateway.ts`: isolated provider request and environment configuration.
-- `src/lib/model-intent-response.ts`: strict validation of the model response.
-- `src/lib/local-intent.ts` and `src/lib/intent-fallback.ts`: existing phrase parser and fallback path.
-- `src/lib/search-intent.ts`: validated SearchIntent schema.
-- `src/lib/search-catalogue.ts`: deterministic hard filtering and preference ranking.
-- `src/lib/embedding-client.ts`: server-only OpenAI SDK client for the CognitioLabs gateway.
-- `src/lib/semantic-retrieval.ts`: catalogue text, cosine similarity, batch vector cache and reusable retrieval.
-- `src/lib/search-service.ts`: semantic search with deterministic local fallback.
-- `src/app/listing/[id]/page.tsx`: statically generated detail routes.
-- `src/app/notes/page.tsx`: public project notes.
-- `src/app/layout.tsx` and `src/app/globals.css`: common navigation and Tailwind styles.
+```dotenv
+CLASSGW_KEY=your-candidate-gateway-key
+```
 
-The App Router reads local data directly. Prices and locations are illustrative Singapore-based seed data; images are placeholders. There is no database or catalogue Q&A.
+The key belongs only on the server. For deployment, set `CLASSGW_KEY` in the hosting provider's server environment. Do not prefix it with `NEXT_PUBLIC_`, commit `.env.local`, or paste the key into the browser. The `.gitignore` excludes `.env` files while retaining `.env.example`.
 
-## Search configuration
+The SDK is configured for the CognitioLabs-provided OpenRouter-compatible base URL `https://174.138.16.223/openrouter/v1` and embedding model `openai/text-embedding-3-small`. The model ID includes the vendor prefix. The provided `openai/gpt-4o-mini` chat model is not used by the active search flow.
 
-Search works without credentials using a limited server-side phrase parser and deterministic ranking. To enable semantic retrieval, set `CLASSGW_KEY` in a local `.env.local` based on `.env.example`. Configure the same variable as a **server-side** environment variable in deployment. Never use a `NEXT_PUBLIC_` prefix or commit the key.
+## How search works
 
-The OpenAI JavaScript SDK uses `https://174.138.16.223/openrouter/v1` with model `openai/text-embedding-3-small`. The vendor prefix is part of the model ID. The provided chat model `openai/gpt-4o-mini` is not used by this retrieval flow or by catalogue Q&A yet.
+1. The homepage sends `{ "query": "..." }` to `POST /api/search`.
+2. The local parser extracts **explicit hard constraints** into a validated `SearchIntent`: price range, minimum RAM or storage, maximum weight, brand, and condition. It does not infer a numeric requirement from a vague phrase.
+3. If `CLASSGW_KEY` is available, the server embeds the query and a text representation of each seeded listing. The representation includes only catalogue fields such as price, hardware, condition, and description.
+4. Deterministic TypeScript filtering removes listings that violate explicit constraints. Cosine similarity ranks the remaining listings by semantic relevance. The model never chooses listing IDs or changes listing facts.
+5. If embedding retrieval fails or the key is absent, the existing local search ranks and filters the same seeded catalogue. In this fallback, a vague query may yield the full catalogue because the phrase parser recognizes only a limited set of terms.
 
-The earlier optional, unverified intent adapter remains isolated for future work. It is not called by the current search route. Its separate variables are:
+The six catalogue embeddings are requested together and cached in the server process. Concurrent searches share the same in-flight catalogue request. Each query gets a new embedding. A changed catalogue regenerates the cache; a serverless cold start or another server instance may do so as well. Vectors are not persisted.
 
-- `COGNITIO_API_URL`: full gateway request URL.
-- `COGNITIO_MODEL`: gateway model ID.
-- `COGNITIO_API_KEY`: server-side key.
+The response includes `listings`, `interpretedIntent`, `retrieval` (`embedding` or `local-fallback`), and scores for embedding results. A fallback also includes a coarse `fallbackReason`, such as `missing-key`, `gateway-auth`, or `gateway-network`. No key, authorization header, or provider response text is returned.
 
-That earlier chat adapter has not been verified against the actual gateway. The embedding integration has been tested with mocked vectors, but **no real gateway response has been verified** in this environment.
+### Check which path ran
 
-`POST /api/search` accepts `{ "query": "..." }` and returns `{ interpretedIntent, retrieval, listings, scores }`, with `retrieval` set to `embedding` or `local-fallback`. The local parser extracts explicit hard constraints (price range, minimum RAM/storage, maximum weight, brand and condition), which always exclude ineligible listings. The embedding ranks the remaining listings by cosine similarity. If the embedding request fails or `CLASSGW_KEY` is absent, the existing deterministic filtering and preference ranking handle the search. Unrecognized local constraints may result in overly broad matches.
+In development, submit a search and expand **Search details (development)** below the results. In a deployed build, inspect the `/api/search` response in browser developer tools. `retrieval: "embedding"` means vectors were returned for that request; `local-fallback` means deterministic local search ran. An empty `interpretedIntent` means no explicit constraint was recognized; it does not by itself explain why fallback occurred. Inspect `fallbackReason` for that.
 
-Catalogue embeddings are generated in one request, cached in memory as a shared in-flight promise and regenerated if listing text changes. Query embeddings are generated per search. Each serverless cold start may recreate the catalogue cache; vectors are not persisted or shared across instances.
+The embedding integration has been tested with mocked vectors, but **a real CognitioLabs gateway response has not been verified in this repository's test environment**. Verify it with your candidate key before presenting a deployed demo as model-backed.
 
-In development, submit a search and expand **Search details (development)** below the results. On a deployed build, inspect the `/api/search` response in browser developer tools to see `retrieval`, `interpretedIntent`, scores and (when applicable) a coarse `fallbackReason`. `missing-key` means `CLASSGW_KEY` was not loaded by the server; `gateway-auth` indicates a rejected credential; `gateway-network` indicates a connection or timeout problem. The reason never contains provider response text. A response marked `embedding` verifies that the embedding request returned vectors for that request; `local-fallback` does not. Restart the local server after changing `.env.local` and test the deployed site with a real key before claiming gateway functionality.
+## Code map
+
+| Path | Responsibility |
+| --- | --- |
+| `src/data/listings.ts` | Listing type and six seeded laptops |
+| `src/app/page.tsx`, `src/components/marketplace-search.tsx` | Browse page and interactive search UI |
+| `src/app/listing/[id]/page.tsx` | Listing detail page |
+| `src/app/api/search/route.ts` | Request validation and search response |
+| `src/lib/local-intent.ts`, `src/lib/search-intent.ts` | Local constraint extraction and intent schema |
+| `src/lib/search-catalogue.ts` | Deterministic filtering and fallback ranking |
+| `src/lib/embedding-client.ts` | Server-only SDK client and embedding requests |
+| `src/lib/semantic-retrieval.ts` | Listing serialization, vector cache, cosine ranking |
+| `src/lib/search-service.ts` | Embedding-first search and local fallback |
+| `src/app/notes/page.tsx` | Public assessment notes |
+
+An earlier experimental chat-based intent adapter remains in `src/lib/cognitio-gateway.ts` and related files. **The current `/api/search` route does not call it.** The optional `COGNITIO_*` entries in `.env.example` belong to that unused adapter; only `CLASSGW_KEY` is needed for active semantic search.
+
+## Checks
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+Tests mock embedding requests and do not consume gateway allowance. They cover catalogue text, cosine similarity, ranking, cache reuse, hard constraints, and fallback behavior.
