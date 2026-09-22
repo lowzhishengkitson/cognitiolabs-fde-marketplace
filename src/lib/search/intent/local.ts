@@ -1,7 +1,7 @@
 import { searchIntentSchema, type NumericBoundField, type SearchIntent } from "./schema";
 
 type Direction = "min" | "max";
-type Bound = { value: number; strict: boolean };
+type Bound = { value: number; strict: boolean; span: readonly [number, number] };
 const MIN_WORDS = String.raw`at\s+least|minimum|min(?:imum)?(?:\s+of)?|over|above|more\s+than`;
 const MAX_WORDS = String.raw`at\s+most|maximum|max(?:imum)?(?:\s+of)?|under|below|less\s+than|up\s+to|no\s+more\s+than`;
 
@@ -18,7 +18,7 @@ function capacityBound(text: string, subject: string, direction: Direction): Bou
   const before = text.match(new RegExp(String.raw`\b(${words})\s+(\d+(?:\.\d+)?)\s*(gb|tb)\s*(?:of\s*)?(?:${subject})\b`, "i"));
   const after = text.match(new RegExp(String.raw`\b(?:${subject})\s*(?:of\s*)?(${words})\s+(\d+(?:\.\d+)?)\s*(gb|tb)\b`, "i"));
   const match = before ?? after;
-  return match ? { value: capacity(match[2], match[3]), strict: isStrict(match[1]) } : undefined;
+  return match ? { value: capacity(match[2], match[3]), strict: isStrict(match[1]), span: [match.index!, match.index! + match[0].length] } : undefined;
 }
 
 function scalarBound(text: string, subject: string, unit: string, direction: Direction): Bound | undefined {
@@ -26,7 +26,31 @@ function scalarBound(text: string, subject: string, unit: string, direction: Dir
   const before = text.match(new RegExp(String.raw`\b(${words})\s+(\d+(?:\.\d+)?)\s*${unit}\s*(?:${subject})?(?!\w)`, "i"));
   const after = text.match(new RegExp(String.raw`\b(?:${subject})\s*(?:of\s*)?(${words})\s+(\d+(?:\.\d+)?)\s*${unit}(?!\w)`, "i"));
   const match = before ?? after;
-  return match ? { value: Number(match[2]), strict: isStrict(match[1]) } : undefined;
+  return match ? { value: Number(match[2]), strict: isStrict(match[1]), span: [match.index!, match.index! + match[0].length] } : undefined;
+}
+
+function screenBound(text: string, direction: Direction): Bound | undefined {
+  const words = direction === "min" ? MIN_WORDS : MAX_WORDS;
+  const symbol = direction === "min" ? String.raw`>=|>` : String.raw`<=|<`;
+  const unit = String.raw`(?:inch(?:es)?|in|\")`;
+  const patterns = [
+    new RegExp(String.raw`\b(${words})\s+(\d+(?:\.\d+)?)\s*-?\s*${unit}(?:\s+screen(?:\s+size)?)?(?!\w)`, "i"),
+    new RegExp(String.raw`\bscreen(?:\s+size)?\s*(?:(${words})|(${symbol}))\s*(\d+(?:\.\d+)?)\s*${unit}(?!\w)`, "i"),
+    new RegExp(String.raw`\b(\d+(?:\.\d+)?)\s*-?\s*${unit}\s+screen(?:\s+size)?\s+(${direction === "min" ? "minimum|min" : "maximum|max"})\b`, "i"),
+  ];
+  for (let index = 0; index < patterns.length; index++) {
+    const match = text.match(patterns[index]);
+    if (!match) continue;
+    const value = index === 0 ? Number(match[2]) : index === 1 ? Number(match[3]) : Number(match[1]);
+    const qualifier = index === 0 ? match[1] : index === 1 ? (match[1] ?? match[2]) : match[2];
+    return { value, strict: isStrict(qualifier) || qualifier === ">" || qualifier === "<", span: [match.index!, match.index! + match[0].length] };
+  }
+  return undefined;
+}
+
+function unqualifiedScreenBound(text: string): Bound | undefined {
+  const match = text.match(/\b(\d+(?:\.\d+)?)\s*-?\s*(?:inch(?:es)?|in|\")\s+screen(?:\s+size)?\b/i);
+  return match ? { value: Number(match[1]), strict: false, span: [match.index!, match.index! + match[0].length] } : undefined;
 }
 
 function componentQueries(query: string): Pick<SearchIntent, "cpuQuery" | "gpuQuery"> {
@@ -40,29 +64,45 @@ export function parseLocally(query: string): SearchIntent {
   const text = query.toLowerCase();
   const exclusiveBounds: NumericBoundField[] = [];
   const values: Partial<Record<NumericBoundField, number>> = {};
+  const claimedSpans: Array<readonly [number, number]> = [];
   const setBound = (field: NumericBoundField, bound: Bound | undefined) => {
     if (!bound) return;
     values[field] = bound.value;
+    claimedSpans.push(bound.span);
     if (bound.strict) exclusiveBounds.push(field);
   };
 
-  const priceAmount = String.raw`(?:s\$|\$|sgd\s*)?(\d+(?:\.\d+)?)(?![\d.])`;
-  const priceBound = (direction: Direction): Bound | undefined => {
-    const words = direction === "min" ? MIN_WORDS : `${MAX_WORDS}|budget\s+of`;
-    const match = text.match(new RegExp(String.raw`\b(${words})\s+${priceAmount}(?!\s*(?:gb|tb|kg|inches?|%|[a-z]+\s+ram\b))`, "i"));
-    return match ? { value: Number(match[2]), strict: isStrict(match[1]) } : undefined;
-  };
-  setBound("minPrice", priceBound("min")); setBound("maxPrice", priceBound("max"));
+  // Typed measurements are parsed first and their spans are removed before
+  // generic price parsing, so hardware numbers can never become prices.
   setBound("minRamGB", capacityBound(text, String.raw`ram|memory`, "min"));
   setBound("maxRamGB", capacityBound(text, String.raw`ram|memory`, "max"));
   setBound("minStorageGB", capacityBound(text, String.raw`storage|ssd|disk`, "min"));
   setBound("maxStorageGB", capacityBound(text, String.raw`storage|ssd|disk`, "max"));
   setBound("minWeightKg", scalarBound(text, String.raw`weight`, String.raw`kg`, "min"));
   setBound("maxWeightKg", scalarBound(text, String.raw`weight`, String.raw`kg`, "max"));
-  setBound("minScreenSizeInches", scalarBound(text, String.raw`screen(?:\s+size)?`, String.raw`(?:inches?|in|\")`, "min"));
-  setBound("maxScreenSizeInches", scalarBound(text, String.raw`screen(?:\s+size)?`, String.raw`(?:inches?|in|\")`, "max"));
+  const maximumScreen = screenBound(text, "max");
+  const minimumScreen = screenBound(text, "min") ?? (maximumScreen ? undefined : unqualifiedScreenBound(text));
+  setBound("minScreenSizeInches", minimumScreen);
+  setBound("maxScreenSizeInches", maximumScreen);
   setBound("minBatteryHealth", scalarBound(text, String.raw`battery\s+health`, String.raw`%`, "min"));
   setBound("maxBatteryHealth", scalarBound(text, String.raw`battery\s+health`, String.raw`%`, "max"));
+
+  // A malformed unit attached to a known hardware field is still hardware
+  // context. Reserve it so "20 bananas RAM" is rejected as RAM rather than
+  // silently becoming a price constraint.
+  const malformedHardware = new RegExp(String.raw`\b(?:${MIN_WORDS}|${MAX_WORDS})\s+\d+(?:\.\d+)?\s+\S+(?:\s+(?:ram|memory|storage|ssd|screen|battery\s+health|weight))\b`, "gi");
+  for (const match of text.matchAll(malformedHardware)) claimedSpans.push([match.index, match.index + match[0].length]);
+
+  const priceText = [...text].map((character, index) => claimedSpans.some(([start, end]) => index >= start && index < end) ? " " : character).join("");
+  const priceAmount = String.raw`(?:s\$|\$|sgd\s*)?(?<amount>\d+(?:\.\d+)?)(?![\d.])`;
+  const priceBound = (direction: Direction): Bound | undefined => {
+    const words = direction === "min" ? MIN_WORDS : String.raw`${MAX_WORDS}|budget\s+of`;
+    const before = priceText.match(new RegExp(String.raw`\b(?<qualifier>${words})\s+${priceAmount}`, "i"));
+    const after = priceText.match(new RegExp(String.raw`\bprice\s+(?<qualifier>${words})\s+${priceAmount}`, "i"));
+    const match = after ?? before;
+    return match ? { value: Number(match.groups!.amount), strict: isStrict(match.groups!.qualifier), span: [match.index!, match.index! + match[0].length] } : undefined;
+  };
+  setBound("minPrice", priceBound("min")); setBound("maxPrice", priceBound("max"));
 
   if (values.minRamGB === undefined && values.maxRamGB === undefined) {
     const shorthand = text.match(/\b(\d+(?:\.\d+)?)\s*(gb|tb)\s*(?:ram\b|(?:ram\s*)?laptops?\b)/i);

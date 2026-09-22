@@ -148,6 +148,54 @@ test("expanded structured fields parse bounds and deterministic superlatives", (
   assert.equal(parseLocally("battery health at least 85%").minBatteryHealth, 85);
 });
 
+test("screen measurement takes precedence over generic price parsing", () => {
+  const intent = parseLocally("at least 15 inch screen");
+  assert.equal(intent.minScreenSizeInches, 15);
+  assert.equal(intent.minPrice, undefined);
+});
+
+test("typed hardware measurements never collide with price parsing", () => {
+  const cases = [
+    ["at least 15 inch screen", "minScreenSizeInches", 15],
+    ["at least 15-inch screen", "minScreenSizeInches", 15],
+    ["at least 15 inches", "minScreenSizeInches", 15],
+    ["15-inch screen minimum", "minScreenSizeInches", 15],
+    ["screen at least 15 inches", "minScreenSizeInches", 15],
+    ["screen >= 15 inches", "minScreenSizeInches", 15],
+    ["at least 15.6 inch screen", "minScreenSizeInches", 15.6],
+    ["at least 16GB RAM", "minRamGB", 16],
+    ["under 16GB RAM", "maxRamGB", 16],
+    ["at least 1TB storage", "minStorageGB", 1000],
+    ["under 1.5kg", "maxWeightKg", 1.5],
+    ["battery health above 85%", "minBatteryHealth", 85],
+  ] as const;
+  for (const [query, field, expected] of cases) {
+    const intent = parseLocally(query);
+    assert.equal(intent[field], expected, query);
+    assert.equal(intent.minPrice, undefined, `${query}: minPrice`);
+    assert.equal(intent.maxPrice, undefined, `${query}: maxPrice`);
+  }
+});
+
+test("generic prices remain available after typed spans are claimed", () => {
+  assert.equal(parseLocally("under $800").maxPrice, 800);
+  assert.equal(parseLocally("under SGD 800").maxPrice, 800);
+  assert.equal(parseLocally("budget of 800").maxPrice, 800);
+  assert.equal(parseLocally("price below 800").maxPrice, 800);
+  assert.equal(parseLocally("under 800").maxPrice, 800);
+
+  const first = parseLocally("under $1000 with at least 15 inch screen");
+  assert.equal(first.maxPrice, 1000);
+  assert.equal(first.minScreenSizeInches, 15);
+  assert.equal(first.minPrice, undefined);
+
+  const second = parseLocally("at least 16GB RAM and 15 inch screen under $900");
+  assert.equal(second.minRamGB, 16);
+  assert.equal(second.minScreenSizeInches, 15);
+  assert.equal(second.maxPrice, 900);
+  assert.equal(second.minPrice, undefined);
+});
+
 test("named CPU and GPU requirements are preserved without inventing qualitative components", () => {
   assert.equal(parseLocally("RTX 4060 laptops").gpuQuery, "RTX 4060");
   assert.equal(parseLocally("laptop with RTX 3060").gpuQuery, "RTX 3060");

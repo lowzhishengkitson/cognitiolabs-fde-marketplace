@@ -151,3 +151,12 @@ test("new structured constraints filter before semantic ranking and explicit sor
   assert.ok(ranked.every(({ listing }) => /rtx\s*3060/i.test(listing.gpu) && listing.price <= 1200));
   assert.deepEqual(ranked.map(({ listing }) => listing.price), [...ranked.map(({ listing }) => listing.price)].sort((a, b) => a - b));
 });
+
+test("screen constraints remain authoritative through semantic retrieval", async () => {
+  const retrieve = createSemanticRetriever(async (texts) => texts.map((_text, index) => [index + 1, 1]));
+  const result = await searchWithFallback("at least 15 inch screen", listings, retrieve, () => assert.fail("Unexpected fallback"));
+  assert.equal(result.interpretedIntent.minScreenSizeInches, 15);
+  assert.equal(result.interpretedIntent.minPrice, undefined);
+  assert.ok(result.listings.length > 0);
+  assert.ok(result.listings.every((item) => item.screenSizeInches >= 15));
+});
