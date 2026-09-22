@@ -1,42 +1,109 @@
-import { searchIntentSchema, type SearchIntent } from "./schema";
+import { searchIntentSchema, type NumericBoundField, type SearchIntent } from "./schema";
 
-// Useful before model credentials are available. Only recognizes explicit patterns.
-export function parseLocally(query: string): SearchIntent 
-{
+type Direction = "min" | "max";
+type Bound = { value: number; strict: boolean };
+const MIN_WORDS = String.raw`at\s+least|minimum|min(?:imum)?(?:\s+of)?|over|above|more\s+than`;
+const MAX_WORDS = String.raw`at\s+most|maximum|max(?:imum)?(?:\s+of)?|under|below|less\s+than|up\s+to|no\s+more\s+than`;
+
+function isStrict(phrase: string): boolean {
+  return /^(?:over|above|more\s+than|under|below|less\s+than)$/i.test(phrase.trim());
+}
+
+function capacity(value: string, unit: string): number {
+  return Number(value) * (unit.toLowerCase() === "tb" ? 1000 : 1);
+}
+
+function capacityBound(text: string, subject: string, direction: Direction): Bound | undefined {
+  const words = direction === "min" ? MIN_WORDS : MAX_WORDS;
+  const before = text.match(new RegExp(String.raw`\b(${words})\s+(\d+(?:\.\d+)?)\s*(gb|tb)\s*(?:of\s*)?(?:${subject})\b`, "i"));
+  const after = text.match(new RegExp(String.raw`\b(?:${subject})\s*(?:of\s*)?(${words})\s+(\d+(?:\.\d+)?)\s*(gb|tb)\b`, "i"));
+  const match = before ?? after;
+  return match ? { value: capacity(match[2], match[3]), strict: isStrict(match[1]) } : undefined;
+}
+
+function scalarBound(text: string, subject: string, unit: string, direction: Direction): Bound | undefined {
+  const words = direction === "min" ? MIN_WORDS : MAX_WORDS;
+  const before = text.match(new RegExp(String.raw`\b(${words})\s+(\d+(?:\.\d+)?)\s*${unit}\s*(?:${subject})?(?!\w)`, "i"));
+  const after = text.match(new RegExp(String.raw`\b(?:${subject})\s*(?:of\s*)?(${words})\s+(\d+(?:\.\d+)?)\s*${unit}(?!\w)`, "i"));
+  const match = before ?? after;
+  return match ? { value: Number(match[2]), strict: isStrict(match[1]) } : undefined;
+}
+
+function componentQueries(query: string): Pick<SearchIntent, "cpuQuery" | "gpuQuery"> {
+  const gpu = query.match(/\b(?:(?:nvidia\s+)?(?:geforce\s+)?(?:rtx|gtx)\s*[a-z]?\d{3,4}(?:\s*ti)?|(?:amd\s+)?radeon\s+rx\s*\d{3,4}[a-z]*|intel\s+arc\s+a\d{3,4})\b/i)?.[0];
+  const cpu = query.match(/\b(?:intel\s+(?:core\s+)?i[3579](?:[- ]?\d{4,5}[a-z]{0,2})?|(?:amd\s+)?ryzen\s+[3579](?:\s+pro)?(?:\s+\d{4}[a-z]{0,2})?|apple\s+m[1-9](?:\s+(?:pro|max|ultra))?)\b/i)?.[0];
+  return { cpuQuery: cpu, gpuQuery: gpu };
+}
+
+// Deterministic fallback for common explicit catalogue constraints and sorts.
+export function parseLocally(query: string): SearchIntent {
   const text = query.toLowerCase();
-  const amount = String.raw`(?:s\$|\$|sgd\s*)?(\d+(?:\.\d+)?)(?![\d.])`;
-  const numberAfter = (pattern: RegExp) => {
-    const match = text.match(pattern);
-    return match ? Number(match[1]) : undefined;
+  const exclusiveBounds: NumericBoundField[] = [];
+  const values: Partial<Record<NumericBoundField, number>> = {};
+  const setBound = (field: NumericBoundField, bound: Bound | undefined) => {
+    if (!bound) return;
+    values[field] = bound.value;
+    if (bound.strict) exclusiveBounds.push(field);
   };
-  const minPrice = numberAfter(new RegExp(String.raw`(?:over|above|more than|at least|minimum|min)\s+${amount}(?!\s*(?:gb|tb|kg|[a-z]+\s+ram\b))`, "i"));
-  const maxPrice = numberAfter(new RegExp(String.raw`(?:under|below|less than|up to|maximum|max|budget of)\s+${amount}(?!\s*(?:gb|tb|kg))`, "i"));
-  const ram = text.match(/(?:at least|minimum|min|over|more than)\s+(\d+(?:\.\d+)?)\s*(gb|tb)\s*(?:of\s*)?(?:ram|memory)/i);
-  const minRamGB = ram ? Number(ram[1]) * (ram[2].toLowerCase() === "tb" ? 1000 : 1)
-    : numberAfter(/(?:at least|minimum|min)\s+(\d+(?:\.\d+)?)\s*gb\b(?!\s*(?:storage|ssd))/i)
-    ?? numberAfter(/\b(\d+)\s*gb\s*(?:ram\s*)?laptops?\b/i);
-  const storage = text.match(/(?:at least|minimum|min)\s+(\d+(?:\.\d+)?)\s*(tb|gb)\s*(?:of\s*)?(?:storage|ssd|disk)/i);
-  const maxWeightKg = numberAfter(/(?:under|below|less than|up to|max(?:imum)?)\s+(\d+(?:\.\d+)?)\s*kg/i);
-  const brand = ["Apple", "Lenovo", "ASUS", "Dell", "HP", "Acer"].find((name) => new RegExp(String.raw`\b${name}\b`, "i").test(query));
+
+  const priceAmount = String.raw`(?:s\$|\$|sgd\s*)?(\d+(?:\.\d+)?)(?![\d.])`;
+  const priceBound = (direction: Direction): Bound | undefined => {
+    const words = direction === "min" ? MIN_WORDS : `${MAX_WORDS}|budget\s+of`;
+    const match = text.match(new RegExp(String.raw`\b(${words})\s+${priceAmount}(?!\s*(?:gb|tb|kg|inches?|%|[a-z]+\s+ram\b))`, "i"));
+    return match ? { value: Number(match[2]), strict: isStrict(match[1]) } : undefined;
+  };
+  setBound("minPrice", priceBound("min")); setBound("maxPrice", priceBound("max"));
+  setBound("minRamGB", capacityBound(text, String.raw`ram|memory`, "min"));
+  setBound("maxRamGB", capacityBound(text, String.raw`ram|memory`, "max"));
+  setBound("minStorageGB", capacityBound(text, String.raw`storage|ssd|disk`, "min"));
+  setBound("maxStorageGB", capacityBound(text, String.raw`storage|ssd|disk`, "max"));
+  setBound("minWeightKg", scalarBound(text, String.raw`weight`, String.raw`kg`, "min"));
+  setBound("maxWeightKg", scalarBound(text, String.raw`weight`, String.raw`kg`, "max"));
+  setBound("minScreenSizeInches", scalarBound(text, String.raw`screen(?:\s+size)?`, String.raw`(?:inches?|in|\")`, "min"));
+  setBound("maxScreenSizeInches", scalarBound(text, String.raw`screen(?:\s+size)?`, String.raw`(?:inches?|in|\")`, "max"));
+  setBound("minBatteryHealth", scalarBound(text, String.raw`battery\s+health`, String.raw`%`, "min"));
+  setBound("maxBatteryHealth", scalarBound(text, String.raw`battery\s+health`, String.raw`%`, "max"));
+
+  if (values.minRamGB === undefined && values.maxRamGB === undefined) {
+    const shorthand = text.match(/\b(\d+(?:\.\d+)?)\s*(gb|tb)\s*(?:ram\b|(?:ram\s*)?laptops?\b)/i);
+    if (shorthand) values.minRamGB = capacity(shorthand[1], shorthand[2]);
+  }
+
+  const brand = ["Apple", "Lenovo", "ASUS", "Dell", "HP", "Acer", "MSI", "LG", "Fujitsu", "Microsoft", "Huawei", "Samsung", "Framework", "Gigabyte"].find((name) => new RegExp(String.raw`\b${name}\b`, "i").test(query));
   const condition = /like.new/i.test(query) ? "Like new" as const : /\bfair\s+condition\b/i.test(query) ? "Fair" as const : /\bgood\s+condition\b/i.test(query) ? "Good" as const : undefined;
   const useCase = /unity|game development|3d/i.test(query) ? "Unity development" : /gam(?:e|ing)/i.test(query) ? "gaming" : /programm|cod(?:e|ing)|developer/i.test(query) ? "programming" : /student|university|school/i.test(query) ? "student" : undefined;
-  const lightweightPreference = /\b(?:low[- ]?weight|light[- ]?weight|lightweight)\b|\b(?:light|lighter)\s+(?:laptops?|notebooks?)\b/i.test(query)
-    || (/\bportable\b/i.test(query) && /\b(?:laptops?|notebooks?|computer)\b/i.test(query));
-  const preferences = lightweightPreference || /\btravel(?:ling|ing)?\b/i.test(query) ? ["lightweight"] : undefined;
-  const sortPhrase = text.match(/\b(?:sort(?:ed)?\s+(?:by|in)?\s*|(?:in\s+)?)(ascending|descending|asc|desc)(?:\s+(?:order|by))?\s*(?:by\s+)?(price|cost|weight|ram|memory|storage|battery(?:\s+health)?)?\b|\b(?:sort(?:ed)?\s+by\s+)(price|cost|weight|ram|memory|storage|battery(?:\s+health)?)\s+(ascending|descending|asc|desc)\b/i);
-  const namedSort = text.match(/\b(cheapest|most expensive|lightest|heaviest|lowest weight|highest weight|best battery health)\s+first\b|\b(lowest|highest)\s+weight\b/i);
-  const explicitSortField = namedSort ? (/cheap|expensive/.test(namedSort[0]) ? "price" : /battery/.test(namedSort[0]) ? "batteryHealth" : "weightKg")
-    : sortPhrase ? (/price|cost/.test(sortPhrase[2] ?? sortPhrase[3] ?? "") ? "price" : /ram|memory/.test(sortPhrase[2] ?? sortPhrase[3] ?? "") ? "ramGB" : /storage/.test(sortPhrase[2] ?? sortPhrase[3] ?? "") ? "storageGB" : /battery/.test(sortPhrase[2] ?? sortPhrase[3] ?? "") ? "batteryHealth" : /weight/.test(sortPhrase[2] ?? sortPhrase[3] ?? "") || maxWeightKg !== undefined ? "weightKg" : undefined) : undefined;
-  const explicitDirection = namedSort ? (/expensive|heaviest|highest|best/.test(namedSort[0]) ? "desc" : "asc") : sortPhrase ? (/desc/.test(sortPhrase[1] ?? sortPhrase[4] ?? "") ? "desc" : "asc") : undefined;
-  const implicitSort = lightweightPreference || maxWeightKg !== undefined ? { field: "weightKg" as const, direction: "asc" as const }
-    : /\b(?:high|good|best)\s+battery health\b/i.test(query) ? { field: "batteryHealth" as const, direction: "desc" as const }
-    : /\b(?:lots? of|high|more)\s+(?:ram|memory)\b/i.test(query) ? { field: "ramGB" as const, direction: "desc" as const }
-    : /\b(?:lots? of|high|large)\s+storage\b/i.test(query) ? { field: "storageGB" as const, direction: "desc" as const }
-    : /\b(?:cheap|inexpensive|affordable)\b|\blow price\b/i.test(query) ? { field: "price" as const, direction: "asc" as const }
+  const lightweight = /\b(?:low[- ]?weight|light[- ]?weight|lightweight)\b|\b(?:light|lighter)\s+(?:laptops?|notebooks?)\b/i.test(query) || (/\bportable\b/i.test(query) && /\b(?:laptops?|notebooks?|computer)\b/i.test(query));
+  const preferences = lightweight || /\btravel(?:ling|ing)?\b/i.test(query) ? ["lightweight"] : undefined;
+
+  const sortPhrase = text.match(/\b(?:sort(?:ed)?\s+(?:by|in)?\s*|(?:in\s+)?)(ascending|descending|asc|desc)(?:\s+(?:order|by))?\s*(?:by\s+)?(price|cost|weight|ram|memory|storage|screen(?:\s+size)?|battery(?:\s+health)?)?\b|\b(?:sort(?:ed)?\s+by\s+)(price|cost|weight|ram|memory|storage|screen(?:\s+size)?|battery(?:\s+health)?)\s+(ascending|descending|asc|desc)\b/i);
+  const superlatives: Array<[RegExp, NonNullable<SearchIntent["sort"]>]> = [
+    [/\b(?:cheapest|lowest price)(?:\s+first)?\b/i, { field: "price", direction: "asc" }],
+    [/\b(?:most expensive|highest price)(?:\s+first)?\b/i, { field: "price", direction: "desc" }],
+    [/\b(?:lightest|lowest weight)(?:\s+first)?\b/i, { field: "weightKg", direction: "asc" }],
+    [/\b(?:heaviest|highest weight)(?:\s+first)?\b/i, { field: "weightKg", direction: "desc" }],
+    [/\b(?:most|highest) ram\b/i, { field: "ramGB", direction: "desc" }],
+    [/\b(?:least|lowest) ram\b/i, { field: "ramGB", direction: "asc" }],
+    [/\b(?:most|largest|highest) storage\b/i, { field: "storageGB", direction: "desc" }],
+    [/\b(?:least|smallest|lowest) storage\b/i, { field: "storageGB", direction: "asc" }],
+    [/\b(?:largest|biggest) screen\b/i, { field: "screenSizeInches", direction: "desc" }],
+    [/\b(?:smallest|small) screen\b/i, { field: "screenSizeInches", direction: "asc" }],
+    [/\b(?:best|highest) battery health(?:\s+first)?\b/i, { field: "batteryHealth", direction: "desc" }],
+    [/\b(?:worst|lowest) battery health(?:\s+first)?\b/i, { field: "batteryHealth", direction: "asc" }],
+  ];
+  const namedSort = superlatives.find(([pattern]) => pattern.test(query))?.[1];
+  const sortToken = sortPhrase?.[2] ?? sortPhrase?.[3] ?? "";
+  const phraseSort = sortPhrase ? {
+    field: (/price|cost/.test(sortToken) ? "price" : /ram|memory/.test(sortToken) ? "ramGB" : /storage/.test(sortToken) ? "storageGB" : /screen/.test(sortToken) ? "screenSizeInches" : /battery/.test(sortToken) ? "batteryHealth" : "weightKg") as NonNullable<SearchIntent["sort"]>["field"],
+    direction: (/desc/.test(sortPhrase[1] ?? sortPhrase[4] ?? "") ? "desc" : "asc") as "asc" | "desc",
+  } : undefined;
+  const implicitSort: SearchIntent["sort"] = lightweight || values.maxWeightKg !== undefined ? { field: "weightKg", direction: "asc" }
+    : /\b(?:high|good|best)\s+battery health\b/i.test(query) ? { field: "batteryHealth", direction: "desc" }
+    : /\b(?:lots? of|high|more)\s+(?:ram|memory)\b/i.test(query) ? { field: "ramGB", direction: "desc" }
+    : /\b(?:lots? of|high|large)\s+storage\b/i.test(query) ? { field: "storageGB", direction: "desc" }
+    : /\b(?:cheap|inexpensive|affordable)\b|\blow price\b/i.test(query) ? { field: "price", direction: "asc" }
     : undefined;
-  const sort = explicitSortField && explicitDirection ? { field: explicitSortField, direction: explicitDirection } : implicitSort;
-  const parsed = searchIntentSchema.safeParse({ minPrice, maxPrice, minRamGB, minStorageGB: storage ? Number(storage[1]) * (storage[2].toLowerCase() === "tb" ? 1000 : 1) : undefined, maxWeightKg, brand, condition, useCase, preferences, sort });
-  if (!parsed.success) 
-    throw new Error("Could not interpret the search constraints.");
+  const components = componentQueries(query);
+  const parsed = searchIntentSchema.safeParse({ ...values, ...components, brand, condition, useCase, preferences, sort: namedSort ?? phraseSort ?? implicitSort, exclusiveBounds: exclusiveBounds.length ? exclusiveBounds : undefined });
+  if (!parsed.success) throw new Error("Could not interpret the search constraints.");
   return parsed.data;
 }

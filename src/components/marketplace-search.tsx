@@ -24,14 +24,23 @@ function intentLabels(intent: SearchIntent): string[] {
   if (intent.minPrice !== undefined) labels.push(`Price ≥ S$${intent.minPrice}`);
   if (intent.maxPrice !== undefined) labels.push(`Budget ≤ S$${intent.maxPrice}`);
   if (intent.minRamGB !== undefined) labels.push(`RAM ≥ ${intent.minRamGB}GB`);
+  if (intent.maxRamGB !== undefined) labels.push(`RAM ≤ ${intent.maxRamGB}GB`);
   if (intent.minStorageGB !== undefined) labels.push(`Storage ≥ ${intent.minStorageGB}GB`);
+  if (intent.maxStorageGB !== undefined) labels.push(`Storage ≤ ${intent.maxStorageGB}GB`);
+  if (intent.minWeightKg !== undefined) labels.push(`Weight ≥ ${intent.minWeightKg}kg`);
   if (intent.maxWeightKg !== undefined) labels.push(`Weight ≤ ${intent.maxWeightKg}kg`);
+  if (intent.minScreenSizeInches !== undefined) labels.push(`Screen ≥ ${intent.minScreenSizeInches}″`);
+  if (intent.maxScreenSizeInches !== undefined) labels.push(`Screen ≤ ${intent.maxScreenSizeInches}″`);
+  if (intent.minBatteryHealth !== undefined) labels.push(`Battery ≥ ${intent.minBatteryHealth}%`);
+  if (intent.maxBatteryHealth !== undefined) labels.push(`Battery ≤ ${intent.maxBatteryHealth}%`);
   if (intent.brand) labels.push(`Brand: ${intent.brand}`);
   if (intent.condition) labels.push(`Condition: ${intent.condition}`);
+  if (intent.cpuQuery) labels.push(`CPU: ${intent.cpuQuery}`);
+  if (intent.gpuQuery) labels.push(`GPU: ${intent.gpuQuery}`);
   if (intent.useCase) labels.push(`Use: ${titleCase(intent.useCase)}`);
   for (const preference of intent.preferences ?? []) labels.push(titleCase(preference));
   if (intent.sort) {
-    const fields = { price: "Price", weightKg: "Weight", ramGB: "RAM", storageGB: "Storage", batteryHealth: "Battery health" };
+    const fields = { price: "Price", weightKg: "Weight", ramGB: "RAM", storageGB: "Storage", screenSizeInches: "Screen", batteryHealth: "Battery health" };
     labels.push(`Sort: ${fields[intent.sort.field]} ${intent.sort.direction === "asc" ? "↑" : "↓"}`);
   }
   return [...new Set(labels)];

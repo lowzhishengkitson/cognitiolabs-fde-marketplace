@@ -129,3 +129,53 @@ test("RAM and storage capacities preserve explicit GB/TB constraints", () => {
   assert.equal(malformed.minRamGB, undefined);
   assert.equal(malformed.minPrice, undefined);
 });
+
+test("expanded structured fields parse bounds and deterministic superlatives", () => {
+  for (const [query, field, direction] of [
+    ["largest screen", "screenSizeInches", "desc"], ["smallest screen", "screenSizeInches", "asc"],
+    ["most RAM", "ramGB", "desc"], ["least RAM", "ramGB", "asc"],
+    ["most storage", "storageGB", "desc"], ["highest battery health", "batteryHealth", "desc"],
+  ] as const) assert.deepEqual(parseLocally(query).sort, { field, direction }, query);
+
+  assert.equal(parseLocally("at least 16GB RAM").minRamGB, 16);
+  assert.equal(parseLocally("at most 16GB RAM").maxRamGB, 16);
+  assert.equal(parseLocally("at least 1TB storage").minStorageGB, 1000);
+  assert.equal(parseLocally("under 1TB storage").maxStorageGB, 1000);
+  assert.deepEqual(parseLocally("under 1TB storage").exclusiveBounds, ["maxStorageGB"]);
+  assert.equal(parseLocally("screen at least 15 inches").minScreenSizeInches, 15);
+  assert.equal(parseLocally("screen below 14 inches").maxScreenSizeInches, 14);
+  assert.deepEqual(parseLocally("screen below 14 inches").exclusiveBounds, ["maxScreenSizeInches"]);
+  assert.equal(parseLocally("battery health at least 85%").minBatteryHealth, 85);
+});
+
+test("named CPU and GPU requirements are preserved without inventing qualitative components", () => {
+  assert.equal(parseLocally("RTX 4060 laptops").gpuQuery, "RTX 4060");
+  assert.equal(parseLocally("laptop with RTX 3060").gpuQuery, "RTX 3060");
+  assert.equal(parseLocally("Intel i7 laptop").cpuQuery, "Intel i7");
+  assert.equal(parseLocally("Ryzen 7 laptops").cpuQuery, "Ryzen 7");
+  assert.equal(parseLocally("good GPU for gaming").gpuQuery, undefined);
+  assert.equal(parseLocally("fast processor").cpuQuery, undefined);
+});
+
+test("combined component, numeric, and ordering queries retain every instruction", () => {
+  const gpu = parseLocally("RTX 4060 under $1200, cheapest first");
+  assert.equal(gpu.gpuQuery, "RTX 4060");
+  assert.equal(gpu.maxPrice, 1200);
+  assert.ok(gpu.exclusiveBounds?.includes("maxPrice"));
+  assert.deepEqual(gpu.sort, { field: "price", direction: "asc" });
+
+  const screen = parseLocally("16GB RAM with largest screen");
+  assert.equal(screen.minRamGB, 16);
+  assert.deepEqual(screen.sort, { field: "screenSizeInches", direction: "desc" });
+});
+
+test("schema rejects contradictions for every numeric field pair", () => {
+  for (const intent of [
+    { minPrice: 2, maxPrice: 1 }, { minRamGB: 32, maxRamGB: 16 },
+    { minStorageGB: 1000, maxStorageGB: 512 }, { minWeightKg: 2, maxWeightKg: 1 },
+    { minScreenSizeInches: 16, maxScreenSizeInches: 14 },
+    { minBatteryHealth: 90, maxBatteryHealth: 80 },
+  ]) assert.equal(searchIntentSchema.safeParse(intent).success, false, JSON.stringify(intent));
+  assert.equal(searchIntentSchema.safeParse({ maxRamGB: 1_000_000 }).success, true);
+  assert.equal(searchIntentSchema.safeParse({ exclusiveBounds: ["maxRamGB"] }).success, false);
+});

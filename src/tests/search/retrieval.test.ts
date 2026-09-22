@@ -140,3 +140,14 @@ test("weight constraints filter before implicit or explicit weight ordering", as
     assert.deepEqual(weights, [...weights].sort((a, b) => (a - b) * (direction === "asc" ? 1 : -1)));
   }
 });
+
+test("new structured constraints filter before semantic ranking and explicit sorting", () => {
+  const subset = listings.filter((item) => /rtx 30/i.test(item.gpu)).slice(0, 5);
+  const vectors = subset.map((_item, index) => [index + 1, 1]);
+  const ranked = rankBySimilarity(subset, vectors, [1, 0], {
+    gpuQuery: "RTX 3060", maxPrice: 1200,
+    sort: { field: "price", direction: "asc" },
+  });
+  assert.ok(ranked.every(({ listing }) => /rtx\s*3060/i.test(listing.gpu) && listing.price <= 1200));
+  assert.deepEqual(ranked.map(({ listing }) => listing.price), [...ranked.map(({ listing }) => listing.price)].sort((a, b) => a - b));
+});

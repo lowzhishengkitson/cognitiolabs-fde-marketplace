@@ -4,13 +4,30 @@ import { sortListings } from "./sort";
 
 function matchesHardConstraints(item: Listing, intent: SearchIntent): boolean 
 {
-  return (intent.minPrice === undefined || item.price >= intent.minPrice)
-    && (intent.maxPrice === undefined || item.price <= intent.maxPrice)
-    && (intent.minRamGB === undefined || item.ramGB >= intent.minRamGB)
-    && (intent.minStorageGB === undefined || item.storageGB >= intent.minStorageGB)
-    && (intent.maxWeightKg === undefined || item.weightKg <= intent.maxWeightKg)
+  const exclusive = new Set(intent.exclusiveBounds ?? []);
+  const minimum = (field: Parameters<typeof exclusive.has>[0], actual: number, expected: number | undefined) => expected === undefined || (exclusive.has(field) ? actual > expected : actual >= expected);
+  const maximum = (field: Parameters<typeof exclusive.has>[0], actual: number, expected: number | undefined) => expected === undefined || (exclusive.has(field) ? actual < expected : actual <= expected);
+  const component = (actual: string, expected: string | undefined) => {
+    if (!expected) return true;
+    const normalize = (value: string) => value.toLowerCase().replace(/\b(?:core|processor|cpu|gpu|nvidia|geforce|amd)\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+    return ` ${normalize(actual)} `.includes(` ${normalize(expected)} `);
+  };
+  return minimum("minPrice", item.price, intent.minPrice)
+    && maximum("maxPrice", item.price, intent.maxPrice)
+    && minimum("minRamGB", item.ramGB, intent.minRamGB)
+    && maximum("maxRamGB", item.ramGB, intent.maxRamGB)
+    && minimum("minStorageGB", item.storageGB, intent.minStorageGB)
+    && maximum("maxStorageGB", item.storageGB, intent.maxStorageGB)
+    && minimum("minWeightKg", item.weightKg, intent.minWeightKg)
+    && maximum("maxWeightKg", item.weightKg, intent.maxWeightKg)
+    && minimum("minScreenSizeInches", item.screenSizeInches, intent.minScreenSizeInches)
+    && maximum("maxScreenSizeInches", item.screenSizeInches, intent.maxScreenSizeInches)
+    && minimum("minBatteryHealth", item.batteryHealth, intent.minBatteryHealth)
+    && maximum("maxBatteryHealth", item.batteryHealth, intent.maxBatteryHealth)
     && (intent.brand === undefined || item.brand.toLowerCase() === intent.brand.toLowerCase())
-    && (intent.condition === undefined || item.condition === intent.condition);
+    && (intent.condition === undefined || item.condition === intent.condition)
+    && component(item.cpu, intent.cpuQuery)
+    && component(item.gpu, intent.gpuQuery);
 }
 
 export function filterCatalogue(catalogue: readonly Listing[], intent: SearchIntent): Listing[] 

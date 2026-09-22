@@ -42,3 +42,30 @@ test("lightweight and student preferences affect order without excluding results
 test("unspecified preferences preserve seed order", () => {
   assert.deepEqual(searchCatalogue(listings, {}).map((item) => item.id), listings.map((item) => item.id));
 });
+
+test("expanded numeric bounds filter inclusively and strict markers preserve inequalities", () => {
+  assert.ok(searchCatalogue(listings, { maxRamGB: 16 }).every((item) => item.ramGB <= 16));
+  assert.ok(searchCatalogue(listings, { maxStorageGB: 1000, exclusiveBounds: ["maxStorageGB"] }).every((item) => item.storageGB < 1000));
+  assert.ok(searchCatalogue(listings, { minScreenSizeInches: 15 }).every((item) => item.screenSizeInches >= 15));
+  assert.ok(searchCatalogue(listings, { maxScreenSizeInches: 14, exclusiveBounds: ["maxScreenSizeInches"] }).every((item) => item.screenSizeInches < 14));
+  assert.ok(searchCatalogue(listings, { minBatteryHealth: 85 }).every((item) => item.batteryHealth >= 85));
+});
+
+test("component matching is normalized, case-insensitive, and exact to the named identifier", () => {
+  const rtx4060 = searchCatalogue(listings, { gpuQuery: "RTX 4060" });
+  assert.ok(rtx4060.every((item) => /rtx\s*4060/i.test(item.gpu)));
+  assert.ok(rtx4060.every((item) => !/rtx\s*4070/i.test(item.gpu)));
+  const ryzen7 = searchCatalogue(listings, { cpuQuery: "Ryzen 7" });
+  assert.ok(ryzen7.length > 0);
+  assert.ok(ryzen7.every((item) => /ryzen\s*7/i.test(item.cpu)));
+  assert.ok(searchCatalogue(listings, { cpuQuery: "Intel i7" }).every((item) => /intel core i7/i.test(item.cpu)));
+});
+
+test("combined hard constraints apply before deterministic final sorting", () => {
+  const gpu = searchCatalogue(listings, { gpuQuery: "RTX 4060", maxPrice: 1200, sort: { field: "price", direction: "asc" } });
+  assert.ok(gpu.every((item) => /rtx\s*4060/i.test(item.gpu) && item.price <= 1200));
+  assert.deepEqual(gpu.map((item) => item.price), [...gpu.map((item) => item.price)].sort((a, b) => a - b));
+  const screens = searchCatalogue(listings, { minRamGB: 16, sort: { field: "screenSizeInches", direction: "desc" } });
+  assert.ok(screens.every((item) => item.ramGB >= 16));
+  assert.deepEqual(screens.map((item) => item.screenSizeInches), [...screens.map((item) => item.screenSizeInches)].sort((a, b) => b - a));
+});
