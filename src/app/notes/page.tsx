@@ -8,6 +8,7 @@ const sections = [
     points: [
       "Second Loop is a phone-friendly second-hand laptop marketplace demo for people comparing options for study, work, travel, and gaming. Anyone can browse listings and open a detail page without signing in.",
       "Search accepts a natural-language query. The server embeds the query and seeded listings, filters explicit constraints such as a maximum price or minimum RAM in TypeScript, then orders eligible listings by cosine similarity. The model does not choose listing IDs or change catalogue facts.",
+      "Catalogue Q&A answers questions and comparisons from selected seeded listings. Broad numeric questions use deterministic checks over the full catalogue; open-ended questions use semantic retrieval to find relevant records. Answers link to their supporting listings.",
     ],
   },
   {
@@ -20,22 +21,22 @@ const sections = [
   {
     title: "AI coding tools and models",
     points: [
-      "I used Codex to develop this prototype and checked the search behavior with automated tests using mocked vectors. The active search code is configured for openai/text-embedding-3-small through the CognitioLabs-provided OpenRouter-compatible gateway. The key stays on the server.",
-      "A real embedding response from the gateway has not yet been verified in this environment. The provided openai/gpt-4o-mini chat model does not power the current search or Q&A. An earlier chat-based intent adapter is present in the codebase but is not called by the active search route.",
+      "I used Codex to develop this prototype and checked search and Q&A with automated tests using mocked model requests. Semantic retrieval uses openai/text-embedding-3-small and catalogue Q&A uses openai/gpt-4o-mini through the CognitioLabs-provided gateway. The key stays on the server.",
+      "Q&A supplies actual catalogue records as JSON and instructs the model to treat seller text as untrusted data. Missing facts must be acknowledged; battery health does not establish battery runtime. Real gateway responses have not yet been verified in this environment.",
     ],
   },
   {
     title: "Features intentionally not built",
     points: [
       "I prioritized a browsable catalogue, item details, and searchable results. Authentication, payments, messaging, logistics, and database integration are outside this demo's current scope.",
-      "Catalogue Q&A has not been implemented. Search retrieves existing listings; it does not generate answers or comparisons from catalogue facts.",
+      "Q&A is a single-question interaction, without persistent conversations. Authentication, payments, messaging, and real seller transactions are not implemented.",
     ],
   },
   {
     title: "Known issues and unfinished work",
     points: [
       "If embedding retrieval fails or the key is missing, search falls back to a limited local phrase parser and deterministic ranking. A vague query may show all listings because the parser recognizes only common explicit constraints and a few preferences.",
-      "The API labels results as embedding or local-fallback and provides a coarse fallback reason for diagnosis. I still need to verify a real gateway call and the deployed search experience with the candidate key. Listing images and catalogue Q&A remain unfinished.",
+      "The search API labels results as embedding or local-fallback and provides a coarse fallback reason. Q&A instead reports temporary unavailability if its gateway fails. I still need to verify real embedding and chat gateway responses and the deployed experience with the candidate key; listing images remain placeholders.",
     ],
   },
 ];

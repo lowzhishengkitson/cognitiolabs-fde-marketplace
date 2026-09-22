@@ -1,4 +1,5 @@
 import { MarketplaceSearch } from "@/components/marketplace-search";
+import { CatalogueAssistant } from "@/components/catalogue-assistant";
 import { listings } from "@/data/listings";
 
 export default function Home() {
@@ -7,6 +8,7 @@ export default function Home() {
       <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">Find your next laptop.</h1>
       <p className="mt-4 leading-7 text-slate-600">Browse second-hand laptops for work, study, travel and play.</p>
     </section>
+    <CatalogueAssistant />
     <MarketplaceSearch catalogue={listings} />
   </main>;
 }

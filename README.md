@@ -9,9 +9,10 @@ The app uses **Next.js App Router, TypeScript, Tailwind CSS, Zod, and the offici
 - Browse cards showing price, CPU, RAM, storage, condition, and weight.
 - Open `/listing/[id]` for the full specifications, description, and seller location.
 - Search with phrases such as `something portable for university programming` or `under $800 with at least 16GB RAM`.
+- Ask catalogue-grounded questions or compare laptops, with links to the listings used in the answer.
 - Read `/notes` without signing in.
 
-All listing prices and seller details are illustrative. Laptop artwork is a placeholder. Payments, messaging, authentication, and catalogue Q&A are not implemented.
+All listing prices and seller details are illustrative. Laptop artwork is a placeholder. Payments, messaging, and authentication are not implemented.
 
 ## Run locally
 
@@ -25,7 +26,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). On Windows PowerShell, copy `.env.example` to `.env.local` with `Copy-Item .env.example .env.local`. If PowerShell blocks `npm.ps1`, run `npm.cmd` in place of `npm`.
 
-Search works without a key through the limited local parser. To try semantic retrieval, set this variable in `.env.local` and restart the development server:
+Search works without a key through the limited local parser. Q&A requires a working gateway. To try semantic retrieval and Q&A, set this variable in `.env.local` and restart the development server:
 
 ```dotenv
 CLASSGW_KEY=your-candidate-gateway-key
@@ -33,7 +34,7 @@ CLASSGW_KEY=your-candidate-gateway-key
 
 The key belongs only on the server. For deployment, set `CLASSGW_KEY` in the hosting provider's server environment. Do not prefix it with `NEXT_PUBLIC_`, commit `.env.local`, or paste the key into the browser. The `.gitignore` excludes `.env` files while retaining `.env.example`.
 
-The SDK is configured for the CognitioLabs-provided OpenRouter-compatible base URL `https://174.138.16.223/openrouter/v1` and embedding model `openai/text-embedding-3-small`. The model ID includes the vendor prefix. The provided `openai/gpt-4o-mini` chat model is not used by the active search flow.
+The SDK is configured for the CognitioLabs-provided OpenRouter-compatible base URL `https://174.138.16.223/openrouter/v1`, embedding model `openai/text-embedding-3-small`, and Q&A chat model `openai/gpt-4o-mini`. Model IDs include vendor prefixes. Search does not use the chat model.
 
 ## How search works
 
@@ -53,6 +54,14 @@ In development, submit a search and expand **Search details (development)** belo
 
 The embedding integration has been tested with mocked vectors, but **a real CognitioLabs gateway response has not been verified in this repository's test environment**. Verify it with your candidate key before presenting a deployed demo as model-backed.
 
+## Catalogue Q&A
+
+The question panel sends `{ "question": "..." }` to `POST /api/qa`. It reuses the server-side embedding retriever for open-ended questions, selecting up to six relevant catalogue records. Named product comparisons select the named records directly. For broad extrema such as “lightest” or “best battery health under $800,” deterministic TypeScript filters and sorts the entire catalogue first so an embedding shortlist cannot omit the true winner.
+
+The server sends the selected records as JSON to `openai/gpt-4o-mini` with instructions to use only catalogue facts and treat seller descriptions as untrusted data. The model returns an answer and source IDs; source IDs are checked against the supplied records before links are shown. This reduces hallucinations but does not mechanically verify every sentence of model prose. Unavailable facts must be identified explicitly. In particular, battery health percentages cannot establish battery runtime, so questions asking which lasts longest receive an explicit “not available” response. If retrieval or chat fails, Q&A returns a temporary-unavailability error rather than fabricating an answer. Search retains its separate local fallback.
+
+To verify a live response, configure `CLASSGW_KEY`, run `npm run dev`, ask an open-ended question, and inspect `/api/qa` in the browser Network panel: a successful `200` response contains `answer` and real catalogue `sources`. Ask “Which laptop is lightest?” to exercise full-catalogue selection and the chat model; that question does not require an embedding request. A `503` indicates the gateway or response failed. The tests use mocks and do not verify live gateway access.
+
 ## Code map
 
 | Path | Responsibility |
@@ -61,6 +70,8 @@ The embedding integration has been tested with mocked vectors, but **a real Cogn
 | `src/app/page.tsx`, `src/components/marketplace-search.tsx` | Browse page and interactive search UI |
 | `src/app/listing/[id]/page.tsx` | Listing detail page |
 | `src/app/api/search/route.ts` | Request validation and search response |
+| `src/app/api/qa/route.ts`, `src/components/catalogue-assistant.tsx` | Q&A endpoint and question panel |
+| `src/lib/qa/` | Deterministic context selection, grounding prompt, model adapter, and source validation |
 | `src/lib/search/intent/` | Intent schema, local parser, and inactive chat adapter |
 | `src/lib/search/catalogue.ts` | Deterministic filtering and fallback ranking |
 | `src/lib/search/retrieval/` | Server-only embedding client, listing serialization, vector cache, cosine ranking, and safe error categories |
@@ -79,4 +90,4 @@ npm test
 npm run build
 ```
 
-Tests mock embedding requests and do not consume gateway allowance. They cover catalogue text, cosine similarity, ranking, cache reuse, hard constraints, and fallback behavior.
+Tests mock embedding and chat requests and do not consume gateway allowance. They cover catalogue text, cosine similarity, ranking, cache reuse, hard constraints, fallback behavior, Q&A context selection, and source validation.
