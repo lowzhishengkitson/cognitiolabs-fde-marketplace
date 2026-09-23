@@ -149,11 +149,10 @@ Exactly two IDs are resolved against the seeded catalogue. Numeric differences a
 
 | Purpose | Configuration |
 | --- | --- |
-| Gateway | CognitioLabs-provided OpenRouter-compatible endpoint (`https://174.138.16.223/openrouter/v1`) |
+| Gateway | CognitioLabs-provided OpenRouter-compatible endpoint ( Server-side `CLASSGW_BASE_URL`) |
 | Embeddings | `openai/text-embedding-3-small` |
 | Grounded chat | `openai/gpt-4o-mini` |
 | Authentication | Server-side `CLASSGW_KEY` |
-| Optional endpoint override | Server-side `CLASSGW_BASE_URL` |
 
 Search does not use the chat model to extract intent or choose listings. Obsolete experimental chat-intent adapters have been removed from the codebase.
 
@@ -166,13 +165,12 @@ npm install
 cp .env.example .env.local
 ```
 
-Set the provided candidate key in `.env.local`:
+Set the enviroment variables in `.env.local`:
 
 ```dotenv
-CLASSGW_KEY=your-candidate-gateway-key
+CLASSGW_KEY=gateway-key
+CLASSGW_BASE_URL=gateway-url
 ```
-
-`CLASSGW_BASE_URL` is optional. When it is not set, the application uses the CognitioLabs-provided gateway endpoint.
 
 Then run:
 
