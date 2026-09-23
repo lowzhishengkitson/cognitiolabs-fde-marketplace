@@ -206,7 +206,7 @@ export default function NotesPage() {
           </ul>
           <div className="mt-4 flex flex-wrap gap-2">
             <SourceLink path="src/lib/qa/core.ts#L163-L171">View source validation and grounding prompt</SourceLink>
-            <SourceLink path="src/lib/qa/gateway.ts#L7-L43">View grounded chat calls</SourceLink>
+            <SourceLink path="src/lib/qa/gateway.ts#L8-L44">View grounded chat calls</SourceLink>
           </div>
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
@@ -252,9 +252,9 @@ export default function NotesPage() {
         <h3 className="font-bold text-blue-950">CognitioLabs model gateway</h3>
         <p className="mt-2 max-w-4xl text-sm leading-6 text-blue-950">Both models are called through the CognitioLabs-provided OpenRouter-compatible gateway. Calls use the official OpenAI JavaScript SDK on the server and authenticate with <code className="rounded bg-white px-1.5 py-0.5 font-mono text-xs">CLASSGW_KEY</code>; the browser never receives the key. Model IDs retain their vendor prefixes. The deployed gateway-backed embedding and chat flows were verified end to end during production QA.</p>
         <div className="mt-4 flex flex-wrap gap-2">
-          <SourceLink path="src/lib/search/retrieval/gateway-client.ts#L1-L10">View server-only gateway configuration</SourceLink>
-          <SourceLink path="src/lib/search/retrieval/embedding-client.ts#L6-L20">View embedding model configuration</SourceLink>
-          <SourceLink path="src/lib/qa/gateway.ts#L7-L43">View chat model configuration</SourceLink>
+          <SourceLink path="src/lib/search/retrieval/gateway-client.ts#L1-L11">View the server-only gateway client</SourceLink>
+          <SourceLink path="src/lib/ai/config.ts#L1-L7">View gateway and model defaults</SourceLink>
+          <SourceLink path="src/lib/qa/gateway.ts#L8-L44">View grounded chat calls</SourceLink>
         </div>
       </div>
       <div className="mt-10">

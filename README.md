@@ -153,6 +153,7 @@ Exactly two IDs are resolved against the seeded catalogue. Numeric differences a
 | Embeddings | `openai/text-embedding-3-small` |
 | Grounded chat | `openai/gpt-4o-mini` |
 | Authentication | Server-side `CLASSGW_KEY` |
+| Optional endpoint override | Server-side `CLASSGW_BASE_URL` |
 
 Search does not use the chat model to extract intent or choose listings. Obsolete experimental chat-intent adapters have been removed from the codebase.
 
@@ -170,6 +171,8 @@ Set the provided candidate key in `.env.local`:
 ```dotenv
 CLASSGW_KEY=your-candidate-gateway-key
 ```
+
+`CLASSGW_BASE_URL` is optional. When it is not set, the application uses the CognitioLabs-provided gateway endpoint.
 
 Then run:
 
@@ -192,6 +195,7 @@ Without a key, catalogue browsing, comparison, deterministic search fallback, an
 | [`src/app/compare/page.tsx`](src/app/compare/page.tsx) | Shareable deterministic comparison page |
 | [`src/lib/listings/comparison.ts`](src/lib/listings/comparison.ts) | Comparison selection, ID validation, rows, and factual summaries |
 | [`src/app/api/search/route.ts`](src/app/api/search/route.ts) | Search request validation and safe response metadata |
+| [`src/lib/ai/config.ts`](src/lib/ai/config.ts) | Server-only gateway and model defaults |
 | [`src/lib/search/intent/local.ts`](src/lib/search/intent/local.ts), [`schema.ts`](src/lib/search/intent/schema.ts) | Active local intent parser and validated `SearchIntent` contract |
 | [`src/lib/search/catalogue.ts`](src/lib/search/catalogue.ts), [`sort.ts`](src/lib/search/sort.ts) | Hard filtering, fallback preference scoring, and explicit sorting |
 | [`src/lib/search/retrieval/`](src/lib/search/retrieval) | Server-only SDK client, serialization, vector cache, and cosine ranking |
