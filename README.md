@@ -95,7 +95,8 @@ All model calls run in server-only modules through the CognitioLabs-provided Ope
 query
 → deterministic local SearchIntent parsing
 → validated hard constraints
-→ query embedding
+→ remove understood constraints from the embedding text
+→ embed the remaining semantic language
 → TypeScript filtering
 → cosine similarity over eligible listings
 → explicit sort override, when requested
@@ -103,6 +104,8 @@ query
 ```
 
 Hard constraints are applied before semantic relevance can affect the returned set. An embedding score cannot reintroduce an ineligible listing. Inclusive and strict numeric bounds are represented separately, and impossible requests remain impossible: `at least 1000TB RAM` produces no matches instead of silently discarding the constraint.
+
+Before embedding, the parser removes structured information it already understands—numeric bounds, brand/condition filters, CPU/GPU requirements, and explicit sort instructions. The remaining semantic language is embedded. For example, `RTX laptop under $1,200 with at least 16GB RAM, cheapest first` embeds `laptop`, while the removed requirements remain authoritative in `SearchIntent`. If nothing meaningful remains, the semantic query defaults to `laptop`.
 
 The catalogue's embedding text contains only seeded fields. All 50 catalogue vectors are generated in one request and cached per server process; concurrent searches share the same in-flight request. Queries receive a fresh embedding. Serverless cold starts or separate instances may rebuild the cache because vectors are not persisted.
 
@@ -151,7 +154,7 @@ Exactly two IDs are resolved against the seeded catalogue. Numeric differences a
 | Grounded chat | `openai/gpt-4o-mini` |
 | Authentication | Server-side `CLASSGW_KEY` |
 
-Search does not use the chat model to choose listings. An earlier experimental chat-based intent adapter remains isolated under `src/lib/search/intent/`, but no active API route imports it and it is not part of the deployed search architecture.
+Search does not use the chat model to extract intent or choose listings. Obsolete experimental chat-intent adapters have been removed from the codebase.
 
 ## Local setup
 
@@ -210,7 +213,7 @@ npm run lint
 npm run build
 ```
 
-The current suite contains 100 tests. Model and embedding calls are mocked. Coverage includes intent parsing, typed numeric collisions, impossible constraints, deterministic filters and sorts, CPU/GPU matching, retrieval and fallback, match explanations, all three Q&A scopes, comparison arithmetic, source validation, prompt-injection boundaries, gateway failures, and historical regressions.
+Model and embedding calls are mocked. Coverage includes intent parsing, semantic-query cleanup, typed numeric collisions, impossible constraints, deterministic filters and sorts, CPU/GPU matching, retrieval and fallback, match explanations, all three Q&A scopes, comparison arithmetic, source validation, prompt-injection boundaries, gateway failures, and historical regressions.
 
 ## Security notes
 

@@ -7,7 +7,7 @@ const sections = [
     title: "What I built and who it is for",
     points: [
       "Second Loop is a mobile-friendly second-hand laptop marketplace for buyers comparing used laptops for study, work, travel, programming, and gaming. It supports catalogue browsing, detailed listings, natural-language search, two-laptop comparison, and grounded Q&A without requiring sign-in.",
-      "TypeScript owns catalogue truth. It applies search constraints and sorts, computes extrema and comparison differences, answers exact specification questions, detects known missing information, and validates model source IDs. Embeddings improve semantic relevance, while the chat model explains grounded facts when interpretation is useful.",
+      "TypeScript owns catalogue truth. It applies search constraints and sorts, removes already-understood constraints before embedding the remaining semantic language, computes extrema and comparison differences, answers exact specification questions, detects known missing information, and validates model source IDs.",
       "Search results show interpreted requirements and deterministic ‘Why this matched’ reasons. Comparison works without AI; comparison Q&A is an explanatory layer over facts already computed by the application.",
     ],
   },

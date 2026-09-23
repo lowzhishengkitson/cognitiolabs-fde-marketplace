@@ -59,6 +59,22 @@ test("failed embedding request falls back to deterministic local search", async 
   assert.equal(failures, 1);
 });
 
+test("search embeds only the unresolved semantic portion of a structured query", async () => {
+  let embeddedQuery = "";
+  const result = await searchWithFallback(
+    "RTX laptop under $1200 with at least 16GB RAM, cheapest first",
+    listings,
+    async (query) => { embeddedQuery = query; return []; },
+    () => assert.fail("Unexpected fallback"),
+  );
+  assert.equal(embeddedQuery, "laptop");
+  assert.equal(result.semanticQuery, "laptop");
+  assert.equal(result.interpretedIntent.gpuQuery, "RTX");
+  assert.equal(result.interpretedIntent.maxPrice, 1200);
+  assert.equal(result.interpretedIntent.minRamGB, 16);
+  assert.deepEqual(result.interpretedIntent.sort, { field: "price", direction: "asc" });
+});
+
 test("fallback diagnostics classify failures without exposing provider text", () => {
   assert.equal(classifyEmbeddingFailure(new MissingEmbeddingKeyError("secret")), "missing-key");
   assert.equal(classifyEmbeddingFailure({ status: 401, message: "secret" }), "gateway-auth");

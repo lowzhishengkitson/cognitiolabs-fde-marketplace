@@ -7,7 +7,7 @@ import type { Listing } from "@/data/listings";
 import type { SearchIntent } from "@/lib/search/intent/schema";
 import { clearComparison, toggleComparisonId } from "@/lib/listings/comparison";
 
-type SearchResponse = { interpretedIntent: SearchIntent; retrieval: "embedding" | "local-fallback"; fallbackReason?: string; listings: Listing[]; matchReasons: Record<string, string[]>; scores: { id: string; score: number }[] };
+type SearchResponse = { interpretedIntent: SearchIntent; semanticQuery: string; retrieval: "embedding" | "local-fallback"; fallbackReason?: string; listings: Listing[]; matchReasons: Record<string, string[]>; scores: { id: string; score: number }[] };
 
 const suggestions = [
   "Under $700 for university",
@@ -176,7 +176,7 @@ export function MarketplaceSearch({ catalogue }: { catalogue: Listing[] }) {
         <ul className="flex flex-wrap gap-2">{labels.map((label) => <li key={label} className="max-w-full break-words rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-900">{label}</li>)}</ul>
       </div>}
 
-      {process.env.NODE_ENV === "development" && results && <details className="mb-5 rounded-xl border border-slate-200 bg-white p-3 text-sm"><summary className="cursor-pointer font-medium">Search details (development)</summary><p className="mt-2">Retrieval: {results.retrieval}</p>{results.fallbackReason && <p className="mt-1">Fallback reason: {results.fallbackReason}</p>}<pre className="mt-2 max-w-full overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify({ interpretedIntent: results.interpretedIntent, scores: results.scores }, null, 2)}</pre></details>}
+      {process.env.NODE_ENV === "development" && results && <details className="mb-5 rounded-xl border border-slate-200 bg-white p-3 text-sm"><summary className="cursor-pointer font-medium">Search details (development)</summary><p className="mt-2">Retrieval: {results.retrieval}</p><p className="mt-1 break-words">Embedded query: {results.semanticQuery}</p>{results.fallbackReason && <p className="mt-1">Fallback reason: {results.fallbackReason}</p>}<pre className="mt-2 max-w-full overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{JSON.stringify({ interpretedIntent: results.interpretedIntent, scores: results.scores }, null, 2)}</pre></details>}
 
       {displayed.length
         ? <div className={`grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${loading ? "opacity-70" : ""}`}>{displayed.map((listing) => <ListingCard key={listing.id} listing={listing} matchReasons={results?.matchReasons[listing.id]} compareSelected={comparisonIds.includes(listing.id)} onToggleCompare={toggleComparison} />)}</div>

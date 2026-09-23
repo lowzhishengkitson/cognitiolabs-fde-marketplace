@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Listing } from "@/data/listings";
 import { filterCatalogue } from "../search/catalogue";
-import { parseLocally } from "../search/intent/local";
+import { parseLocalQuery, parseLocally } from "../search/intent/local";
 import type { SearchIntent } from "../search/intent/schema";
 import type { ScoredListing } from "../search/retrieval/semantic";
 
@@ -187,7 +187,7 @@ export async function answerCatalogueQuestion(question: string, catalogue: reado
     return { answer: deterministicComparisonAnswer(resolution.listings, extrema), sources: resolution.listings.map(source), facts };
   }
 
-  const intent = parseLocally(question);
+  const { intent, semanticQuery } = parseLocalQuery(question);
   const eligible = filterCatalogue(catalogue, intent);
   if (category === "exact-factual") {
     if (!eligible.length) return { answer: "No seeded listings match the stated constraints, so the requested catalogue fact has no result.", sources: [], facts: { scopeIds: [], extrema: [] } };
@@ -196,7 +196,7 @@ export async function answerCatalogueQuestion(question: string, catalogue: reado
     return { answer: deterministicExtremaAnswer(facts, catalogue), sources: catalogue.filter((item) => ids.has(item.id)).map(source), facts: { scopeIds: eligible.map((item) => item.id), extrema: facts } };
   }
 
-  const ranked = await retrieve(question, { catalogue, intent });
+  const ranked = await retrieve(semanticQuery, { catalogue, intent });
   const context = selectRelevantListings(question, catalogue, ranked);
   if (!context.length) return { answer: "No seeded listings match the stated constraints, so I cannot answer from this catalogue.", sources: [] };
   return parseGroundedAnswer(await answer(question, catalogueContext(context)), context);
